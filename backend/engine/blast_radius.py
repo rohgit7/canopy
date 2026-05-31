@@ -49,11 +49,15 @@ class BlastRadiusCalculator:
             by_type[rtype] = by_type.get(rtype, 0) + 1
 
             if data.get("is_sensitive"): sensitive += 1
-            if data.get("is_admin"):     admin = True
+            if (
+                data.get("is_admin")
+                or data.get("metadata", {}).get("is_admin")
+            ):
+                admin = True
 
         node_count   = max(self.G.number_of_nodes() - 1, 1)
         max_possible = node_count * max(DAMAGE.values())
-        score        = min(100.0, (total / max_possible) * 100) if max_possible else 0
+        score = min(100.0, total)
 
         if admin:
             recovery = 168.0
