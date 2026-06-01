@@ -3,19 +3,9 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { SecurityGraph }  from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
+import { Sidebar } from '@/components/Sidebar'
 
 const API = process.env.NEXT_PUBLIC_API_URL
-
-const NAV_ITEMS = [
-  { icon: 'ti-layout-dashboard', label: 'Dashboard',    active: true  },
-  { icon: 'ti-route',            label: 'Attack Paths', active: false },
-  { icon: 'ti-cloud',            label: 'Resources',    active: false },
-  { icon: 'ti-key',              label: 'IAM Analyzer', active: false },
-  { icon: 'ti-ripple',           label: 'Blast Radius', active: false },
-  { icon: 'ti-report-analytics', label: 'AI Reports',   active: false },
-  { icon: 'ti-plug',             label: 'Integrations', active: false },
-  { icon: 'ti-settings',         label: 'Settings',     active: false },
-]
 
 export default function Dashboard() {
   const { getToken }                      = useAuth()
@@ -24,7 +14,6 @@ export default function Dashboard() {
   const [results,  setResults]            = useState<any>(null)
   const [progress, setProgress]           = useState('')
   const [error,    setError]              = useState<string | null>(null)
-  const [activeNav, setActiveNav]         = useState('Dashboard')
 
   const scan = async () => {
     setScanning(true); setError(null); setResults(null)
@@ -80,67 +69,12 @@ export default function Dashboard() {
     <div style={{ display: 'flex', height: '100vh', background: '#07111f', color: '#b0bec5', fontFamily: 'system-ui, sans-serif' }}>
 
       {/* ── Sidebar ── */}
-      <aside style={{ width: 200, background: '#0a1929', borderRight: '1px solid #1a2d45', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        {/* Logo */}
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid #1a2d45' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="ti ti-shield-lock" style={{ fontSize: 20, color: '#4fc3f7' }} />
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#4fc3f7', letterSpacing: '.5px' }}>CANOPY</div>
-              <div style={{ fontSize: 10, color: '#37637a', letterSpacing: '1px', textTransform: 'uppercase', marginTop: 2 }}>AWS Security Platform</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: '12px 0' }}>
-          {NAV_ITEMS.map(item => (
-            <div
-              key={item.label}
-              onClick={() => setActiveNav(item.label)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 16px', fontSize: 12, cursor: 'pointer',
-                color: activeNav === item.label ? '#4fc3f7' : '#607d8b',
-                background: activeNav === item.label ? '#0f2236' : 'transparent',
-                borderLeft: activeNav === item.label ? '2px solid #4fc3f7' : '2px solid transparent',
-                transition: 'all .15s',
-              }}
-            >
-              <i className={`ti ${item.icon}`} style={{ fontSize: 16 }} />
-              {item.label}
-            </div>
-          ))}
-        </nav>
-
-        <button
-          onClick={scan}
-          disabled={scanning}
-          style={{
-            margin: '0 12px 12px', padding: '10px',
-            background: scanning ? '#0f2236' : '#1565c0',
-            color: '#fff', border: 'none', borderRadius: 8,
-            fontSize: 12, fontWeight: 500, cursor: scanning ? 'not-allowed' : 'pointer', letterSpacing: '.3px',
-          }}
-        >
-          <i className="ti ti-player-play" style={{ fontSize: 12, verticalAlign: -1, marginRight: 4 }} />
-          {scanning ? 'SCANNING...' : 'START SCAN'}
-        </button>
-
-        <div style={{ padding: '12px 16px', borderTop: '1px solid #1a2d45', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {[['ti-file-description','Docs'],['ti-logout','Logout']].map(([icon, label]) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#455a64', cursor: 'pointer' }}>
-              <i className={`ti ${icon}`} style={{ fontSize: 14 }} />{label}
-            </div>
-          ))}
-        </div>
-      </aside>
-
+      <Sidebar onScan={scan} scanning={scanning} />
       {/* ── Main ── */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minWidth: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* Topbar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid #1a2d45', background: '#0a1929', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '10px 20px', borderBottom: '1px solid #1a2d45', background: '#0a1929', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#90caf9', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, padding: '5px 10px', cursor: 'pointer' }}>
             <i className="ti ti-server" style={{ fontSize: 14 }} />AWS-PROD-AP-SOUTH-1
             <i className="ti ti-chevron-down" style={{ fontSize: 13 }} />
@@ -152,7 +86,7 @@ export default function Dashboard() {
             </div>
           )}
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, padding: '5px 12px', fontSize: 12, color: '#455a64' }}>
               <i className="ti ti-search" style={{ fontSize: 15 }} />Search threats, assets...
             </div>
@@ -171,7 +105,7 @@ export default function Dashboard() {
           )}
 
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 14 }}>
             {[
               { label: 'AWS Resources', icon: 'ti-server',  value: results?.resource_count ?? '—',  sub: results ? `${results.node_count} nodes` : 'Run a scan',       subColor: '#4caf50' },
               { label: 'Critical Chains',icon: 'ti-link',   value: results?.attack_paths?.filter((p:any)=>p.exploitability==='CRITICAL').length ?? '—', sub: results ? 'Active paths' : 'Run a scan', subColor: '#ff9800' },
@@ -191,7 +125,7 @@ export default function Dashboard() {
           </div>
 
           {/* Middle row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(360px, 1.5fr)', gap: 12, marginBottom: 14 }}>
 
             {/* Attack path cards */}
             <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14, maxHeight: 320, overflow: 'auto' }}>
@@ -229,7 +163,8 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
               <thead>
                 <tr>{['Scan ID','Target Environment','Status','Completed','Findings','Action'].map(h => (
                   <th key={h} style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', padding: '6px 8px', textAlign: 'left', borderBottom: '1px solid #1a2d45' }}>{h}</th>
@@ -264,6 +199,7 @@ export default function Dashboard() {
                 }
               </tbody>
             </table>
+            </div>
           </div>
 
         </div>
