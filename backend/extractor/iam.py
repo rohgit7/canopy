@@ -58,6 +58,29 @@ class IAMExtractor(BaseExtractor):
                 p.get("PolicyName") == "AdministratorAccess"
                 for p in attached
             )
+            for doc in inline_docs.values():
+                statements = doc.get("Statement", [])
+
+                if isinstance(statements, dict):
+                    statements = [statements]
+
+                for stmt in statements:
+                    if stmt.get("Effect") != "Allow":
+                        continue
+
+                    actions = stmt.get("Action", [])
+                    resources = stmt.get("Resource", [])
+
+                    if isinstance(actions, str):
+                        actions = [actions]
+
+                    if isinstance(resources, str):
+                        resources = [resources]
+
+                    if "*" in actions and "*" in resources:
+                        is_admin = True
+
+            
 
             result.append(
                 Resource(

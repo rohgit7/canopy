@@ -10,7 +10,7 @@ class S3Extractor(BaseExtractor):
         buckets = self._safe(s3.list_buckets, {}).get("Buckets", [])
         result = []
 
-        sensitive_kw = ["prod", "backup", "db", "secret", "key", "data", "private"]
+        sensitive_kw = ["prod", "backup", "db", "secret", "key", "data", "private","test","s3"]
 
         for b in buckets:
             name = b["Name"]

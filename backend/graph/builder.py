@@ -72,6 +72,7 @@ def build_graph(customer_id: str, resources: list, policies_by_arn: dict = None)
     _add_network_edges(graph, resources)
     _add_iam_edges(graph, resources)
     _add_data_edges(graph, resources)
+    _add_privilege_escalation_edges(graph, resources)
 
     if policies_by_arn:
         from .policy_edges import add_policy_edges
@@ -83,6 +84,81 @@ def build_graph(customer_id: str, resources: list, policies_by_arn: dict = None)
 
     return graph
 
+
+def _add_privilege_escalation_edges(graph, resources):
+    admins = [
+        r for r in resources
+        if r.resource_type == ResourceType.IAM_ROLE
+        and (
+            r.metadata.get("is_admin")
+            or r.is_sensitive
+        )
+    ]
+
+    dangerous = {
+        "iam:*",
+        "*",
+        "iam:AttachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:PassRole",
+        "iam:CreatePolicyVersion",
+    }
+
+    for role in resources:
+
+        if role.resource_type != ResourceType.IAM_ROLE:
+            continue
+
+        # Admin should not point to itself
+        if role.metadata.get("is_admin"):
+            continue
+
+        docs = role.metadata.get(
+            "inline_policy_docs",
+            {}
+        )
+
+        can_escalate = False
+
+        for doc in docs.values():
+
+            statements = doc.get("Statement", [])
+
+            if isinstance(statements, dict):
+                statements = [statements]
+
+            for stmt in statements:
+
+                if stmt.get("Effect") != "Allow":
+                    continue
+
+                actions = stmt.get("Action", [])
+
+                if isinstance(actions, str):
+                    actions = [actions]
+
+                if any(a in dangerous for a in actions):
+                    can_escalate = True
+
+        if not can_escalate:
+            continue
+
+        for admin in admins:
+            if admin.resource_id == role.resource_id:
+                continue
+
+            graph.add_edge(
+                Edge(
+                    role.resource_id,
+                    admin.resource_id,
+                    EdgeType.PRIVILEGE_ESCALATION,
+                    EDGE_WEIGHTS[EdgeType.PRIVILEGE_ESCALATION],
+                    {
+                        "description":
+                        f"{role.name} can escalate to {admin.name}"
+                    }
+                )
+            )
 
 def _add_network_edges(graph, resources):
     for r in resources:
@@ -144,6 +220,24 @@ def _add_iam_edges(graph, resources):
         # Role → Role (Assume Role)
         if r.resource_type == ResourceType.IAM_ROLE:
             for principal in r.metadata.get("trust_principals", []):
+
+        # Publicly assumable role
+                if principal == "*":
+                    graph.add_edge(
+                        Edge(
+                            INTERNET_ID,
+                            r.resource_id,
+                            EdgeType.CAN_ASSUME,
+                            0.05,
+                            {
+                                "description":
+                                f"Internet can assume {r.name}"
+                            }
+                        )
+                    )
+                
+                    continue
+
                 src = roles_by_arn.get(principal)
 
                 if src:
@@ -152,8 +246,12 @@ def _add_iam_edges(graph, resources):
                             src.resource_id,
                             r.resource_id,
                             EdgeType.CAN_ASSUME,
-                            EDGE_WEIGHTS[EdgeType.CAN_ASSUME],
-                            {"description": f"{src.name} can assume {r.name}"}
+                            0.05,
+                            {
+                                "description":
+                                f"Internet can assume {r.name}"
+                            }
+                        
                         )
                     )
 

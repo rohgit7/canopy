@@ -1,17 +1,16 @@
 import os
 import json
 import logging
-from openai import OpenAI  # xAI uses OpenAI-compatible SDK
+import google.generativeai as genai
 
 from ..engine.attack_paths import AttackPath
 
 log = logging.getLogger(__name__)
 
-# Grok / xAI client
-client = OpenAI(
-    api_key=os.environ.get("XAI_API_KEY", ""),
-    base_url="https://api.x.ai/v1"
-)
+# Configure Gemini
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
+
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 SYSTEM = """You are a security consultant explaining an AWS attack path to a non-technical CEO.
 Convert the technical data into plain English.
@@ -36,31 +35,34 @@ def narrate_path(path: AttackPath) -> str:
         for i, h in enumerate(path.hops)
     )
 
-    prompt = f"""Attack path details:
+    prompt = f"""{SYSTEM}
+
+Attack path details:
 Target: {path.target_name} ({path.target_type})
 Score: {path.score:.2f} | Blast radius: {path.blast_radius:.0f}/100 | Steps: {path.hop_count}
 
 Chain:
 {hops_text}
 
-Write the JSON narrative."""
+Write the JSON narrative.
+"""
 
     try:
-        resp = client.chat.completions.create(
-            model="grok-2-latest",   # or "grok-1"
-            messages=[
-                {"role": "system", "content": SYSTEM},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3
+        resp = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.3,
+                "response_mime_type": "application/json",
+            },
         )
 
-        raw = resp.choices[0].message.content
+        raw = resp.text.strip()
 
         return raw.replace("```json", "").replace("```", "").strip()
 
     except Exception as e:
         log.error(f"Narration failed: {e}")
+
         return json.dumps({
             "headline": f"Attack path to {path.target_name}",
             "story": " → ".join(h.description for h in path.hops),
