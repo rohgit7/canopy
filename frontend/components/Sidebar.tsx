@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'next/navigation'
 
 const NAV_ITEMS = [
   { icon: 'ti-layout-dashboard', label: 'Dashboard',    href: '/dashboard'    },
+  { icon: 'ti-resource-graph', label: 'Resource Graph', href: '/resource-graph' },
   { icon: 'ti-route',            label: 'Attack Paths', href: '/attack-paths' },
   { icon: 'ti-cloud',            label: 'Resources',    href: '/resources'    },
   { icon: 'ti-key',              label: 'IAM Analyzer', href: '/iam-analyzer' },

@@ -4,14 +4,13 @@ import { useAuth } from '@clerk/nextjs'
 import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
 import { Sidebar } from '@/components/Sidebar'
+import { useScan } from '@/context/ScanContext'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
 export default function Dashboard() {
   const { getToken } = useAuth()
-  const [scanId, setScanId] = useState<string | null>(null)
-  const [scanning, setScanning] = useState(false)
-  const [results, setResults] = useState<any>(null)
+  const { scanId, setScanId, scanning, setScanning, results, setResults } = useScan()
   const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -82,8 +81,9 @@ export default function Dashboard() {
     { label: 'Attack Paths', icon: 'ti-route', value: results?.attack_paths?.length ?? '-', sub: results ? 'Total found' : 'Run a scan', subColor: 'var(--orange)' },
     { label: 'Graph Edges', icon: 'ti-arrows-split-2', value: results?.edge_count ?? '-', sub: results ? 'Relationships' : 'Run a scan', subColor: 'var(--blue)' },
     { label: 'Risk Score', icon: 'ti-gauge', value: score !== null ? `${score.toFixed(0)}` : '-', sub: score !== null ? (score >= 80 ? 'Low risk' : score >= 50 ? 'Medium risk' : 'High risk') : 'Run a scan', subColor: score !== null ? (score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--red)') : 'var(--text-dim)' },
-    { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : (results ? new Date(results.completed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
+    { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : (results?.completed_at ? new Date(results.completed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
   ]
+
 
   return (
     <div className="app-shell">
@@ -146,7 +146,7 @@ export default function Dashboard() {
             <div className="panel" style={{ padding: 16, height: 340 }}>
               <div className="section-title" style={{ marginBottom: 8 }}>Resource Graph</div>
               {results?.graph_data
-                ? <SecurityGraph data={results.graph_data} attackPaths={results.attack_paths} />
+                ? <SecurityGraph data={results.graph_data} attackPaths={results.attack_paths || []} />
                 : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '85%', color: 'var(--text-dim)', fontSize: 12 }}>
                     <i className="ti ti-topology-star-3" style={{ fontSize: 34, display: 'block', textAlign: 'center', marginBottom: 8, color: 'var(--blue)' }} />
                   </div>

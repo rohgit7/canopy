@@ -1,5 +1,6 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import localFont from 'next/font/local'
+import { ScanProvider } from '@/context/ScanContext'
 
 import './globals.css'
 
@@ -24,7 +25,9 @@ export default function RootLayout({
     <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          {children}
+          <ScanProvider>
+            {children}
+          </ScanProvider>
         </body>
       </html>
     </ClerkProvider>

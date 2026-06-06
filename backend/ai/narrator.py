@@ -20,6 +20,7 @@ Required fields:
   story (2-3 sentences, no jargon),
   business_impact (one sentence),
   fix (plain English, specific action),
+  Suggest fix in steps,
   fix_time (e.g. 5 minutes),
   attacker_difficulty (Trivial/Easy/Moderate/Hard),
   time_to_exploit (e.g. 10 minutes).
