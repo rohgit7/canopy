@@ -42,7 +42,7 @@ export default function Connect() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="min-h-screen flex justify-center p-6 overflow-y-auto">
       <div className="max-w-2xl w-full">
 
         <div className="text-center mb-10">
@@ -106,7 +106,7 @@ export default function Connect() {
           disabled={!roleArn || status === 'verifying'}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 py-3 rounded-xl font-semibold transition text-lg"
         >
-          {status === 'verifying' ? '⏳ Verifying...' : '✓  Verify & Connect'}
+          {status === 'verifying' ? 'Verifying...' : '✓  Verify & Connect'}
         </button>
 
         {status === 'ok' && (

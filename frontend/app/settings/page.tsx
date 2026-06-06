@@ -101,11 +101,11 @@ export default function SettingsPage() {
             </button>
           </div>
           {testMsg && (
-            <div style={{ marginTop: 10, fontSize: 12, padding: '8px 12px', borderRadius: 6, background: testMsg.ok ? '#071a0f' : '#1a0a0a', color: testMsg.ok ? '#4caf50' : '#ef5350', border: `1px solid ${testMsg.ok ? '#0d2a1a' : '#2a1010'}` }}>
+            <div style={{ marginTop: 10, fontSize: 12, padding: '8px 12px', borderRadius: 6, background: testMsg.ok ? 'rgba(122, 161, 22, .14)' : 'rgba(209, 50, 18, .14)', color: testMsg.ok ? 'var(--aws-storage)' : 'var(--aws-risk)', border: `1px solid ${testMsg.ok ? 'rgba(122, 161, 22, .28)' : 'rgba(209, 50, 18, .28)'}` }}>
               {testMsg.ok ? '✓ ' : '✗ '}{testMsg.msg}
             </div>
           )}
-          {saved && <div style={{ marginTop: 10, fontSize: 12, color: '#4caf50' }}>✓ Settings saved</div>}
+          {saved && <div style={{ marginTop: 10, fontSize: 12, color: 'var(--aws-storage)' }}>✓ Settings saved</div>}
         </Section>
 
         {/* Scan settings */}
@@ -128,7 +128,7 @@ export default function SettingsPage() {
           <p style={{ fontSize: 12, color: '#607d8b', marginBottom: 12 }}>
             These actions are irreversible.
           </p>
-          <button style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ef5350', borderRadius: 6, color: '#ef5350', fontSize: 12, cursor: 'pointer' }}>
+          <button style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--aws-risk)', borderRadius: 6, color: 'var(--aws-risk)', fontSize: 12, cursor: 'pointer' }}>
             Clear All Scan Data
           </button>
         </Section>

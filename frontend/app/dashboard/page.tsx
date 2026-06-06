@@ -1,28 +1,30 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { SecurityGraph }  from '@/components/SecurityGraph'
+import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
 import { Sidebar } from '@/components/Sidebar'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
 export default function Dashboard() {
-  const { getToken }                      = useAuth()
-  const [scanId,   setScanId]             = useState<string | null>(null)
-  const [scanning, setScanning]           = useState(false)
-  const [results,  setResults]            = useState<any>(null)
-  const [progress, setProgress]           = useState('')
-  const [error,    setError]              = useState<string | null>(null)
+  const { getToken } = useAuth()
+  const [scanId, setScanId] = useState<string | null>(null)
+  const [scanning, setScanning] = useState(false)
+  const [results, setResults] = useState<any>(null)
+  const [progress, setProgress] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   const scan = async () => {
-    setScanning(true); setError(null); setResults(null)
+    setScanning(true)
+    setError(null)
+    setResults(null)
     setProgress('Connecting to your AWS account...')
     try {
       const token = await getToken()
-      const r     = await fetch(`${API}/scan`, {
+      const r = await fetch(`${API}/scan`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ customer_id: 'me' }),
       })
       const data = await r.json()
@@ -46,162 +48,168 @@ export default function Dashboard() {
       'Generating AI explanations...',
     ]
     let idx = 0
-    const msgInt  = setInterval(() => setProgress(msgs[idx++ % msgs.length]), 8000)
+    const msgInt = setInterval(() => setProgress(msgs[idx++ % msgs.length]), 8000)
     const pollInt = setInterval(async () => {
       try {
-        const r    = await fetch(`${API}/scan/${scanId}`)
+        const r = await fetch(`${API}/scan/${scanId}`)
         const data = await r.json()
         if (data.status === 'complete') {
-          setResults(data); setScanning(false)
-          clearInterval(msgInt); clearInterval(pollInt)
+          setResults(data)
+          setScanning(false)
+          clearInterval(msgInt)
+          clearInterval(pollInt)
         } else if (data.status === 'failed') {
-          setError(data.error || 'Scan failed'); setScanning(false)
-          clearInterval(msgInt); clearInterval(pollInt)
+          setError(data.error || 'Scan failed')
+          setScanning(false)
+          clearInterval(msgInt)
+          clearInterval(pollInt)
         }
-      } catch { /* keep polling */ }
+      } catch {
+        // Keep polling while the backend finishes a long-running scan.
+      }
     }, 3000)
-    return () => { clearInterval(msgInt); clearInterval(pollInt) }
+    return () => {
+      clearInterval(msgInt)
+      clearInterval(pollInt)
+    }
   }, [scanId, scanning])
 
   const score = results?.score ?? null
 
+  const statCards = [
+    { label: 'AWS Resources', icon: 'ti-server', value: results?.resource_count ?? '-', sub: results ? `${results.node_count} nodes` : 'Run a scan', subColor: 'var(--green)' },
+    { label: 'Critical Chains', icon: 'ti-link', value: results?.attack_paths?.filter((p: any) => p.exploitability === 'CRITICAL').length ?? '-', sub: results ? 'Active paths' : 'Run a scan', subColor: 'var(--orange)' },
+    { label: 'Attack Paths', icon: 'ti-route', value: results?.attack_paths?.length ?? '-', sub: results ? 'Total found' : 'Run a scan', subColor: 'var(--orange)' },
+    { label: 'Graph Edges', icon: 'ti-arrows-split-2', value: results?.edge_count ?? '-', sub: results ? 'Relationships' : 'Run a scan', subColor: 'var(--blue)' },
+    { label: 'Risk Score', icon: 'ti-gauge', value: score !== null ? `${score.toFixed(0)}` : '-', sub: score !== null ? (score >= 80 ? 'Low risk' : score >= 50 ? 'Medium risk' : 'High risk') : 'Run a scan', subColor: score !== null ? (score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--red)') : 'var(--text-dim)' },
+    { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : (results ? new Date(results.completed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
+  ]
+
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#07111f', color: '#b0bec5', fontFamily: 'system-ui, sans-serif' }}>
-
-      {/* ── Sidebar ── */}
+    <div className="app-shell">
       <Sidebar onScan={scan} scanning={scanning} />
-      {/* ── Main ── */}
-      <div style={{ flex: 1, minWidth: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-
-        {/* Topbar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '10px 20px', borderBottom: '1px solid #1a2d45', background: '#0a1929', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#90caf9', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, padding: '5px 10px', cursor: 'pointer' }}>
+      <div className="app-main">
+        <div className="app-topbar">
+          <div className="pill" style={{ cursor: 'pointer' }}>
             <i className="ti ti-server" style={{ fontSize: 14 }} />AWS-PROD-AP-SOUTH-1
             <i className="ti ti-chevron-down" style={{ fontSize: 13 }} />
           </div>
+
           {scanning && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#4caf50' }}>
-              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4caf50', animation: 'pulse 1.5s infinite' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--green)' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 14px rgba(122, 161, 22, .75)', animation: 'pulse 1.5s infinite' }} />
               {progress}
             </div>
           )}
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, padding: '5px 12px', fontSize: 12, color: '#455a64' }}>
+            <div className="pill search-pill">
               <i className="ti ti-search" style={{ fontSize: 15 }} />Search threats, assets...
             </div>
-            <i className="ti ti-bell" style={{ fontSize: 18, color: '#37637a', cursor: 'pointer' }} />
+            <button className="icon-button" aria-label="Notifications">
+              <i className="ti ti-bell" style={{ fontSize: 18 }} />
+            </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '16px 20px', flex: 1 }}>
-
-          {/* Error */}
+        <div className="app-content">
           {error && (
-            <div style={{ background: '#1a0a0a', border: '1px solid #2a1010', borderRadius: 8, padding: '12px 16px', marginBottom: 14, color: '#ef5350', fontSize: 12 }}>
+            <div style={{ background: 'rgba(209, 50, 18, .16)', border: '1px solid rgba(209, 50, 18, .32)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: 'var(--red)', fontSize: 12 }}>
               <i className="ti ti-alert-triangle" style={{ marginRight: 6 }} />{error}
             </div>
           )}
 
-          {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 14 }}>
-            {[
-              { label: 'AWS Resources', icon: 'ti-server',  value: results?.resource_count ?? '—',  sub: results ? `${results.node_count} nodes` : 'Run a scan',       subColor: '#4caf50' },
-              { label: 'Critical Chains',icon: 'ti-link',   value: results?.attack_paths?.filter((p:any)=>p.exploitability==='CRITICAL').length ?? '—', sub: results ? 'Active paths' : 'Run a scan', subColor: '#ff9800' },
-              { label: 'Attack Paths',  icon: 'ti-route',   value: results?.attack_paths?.length ?? '—', sub: results ? 'Total found' : 'Run a scan',                  subColor: '#ff9800' },
-              { label: 'Graph Edges',   icon: 'ti-arrows-split-2', value: results?.edge_count ?? '—', sub: results ? 'Relationships' : 'Run a scan',                   subColor: '#4fc3f7' },
-              { label: 'Risk Score',    icon: 'ti-gauge',   value: score !== null ? `${score.toFixed(0)}` : '—', sub: score !== null ? (score >= 80 ? 'Low risk' : score >= 50 ? 'Medium risk' : 'High risk') : 'Run a scan', subColor: score !== null ? (score >= 80 ? '#4caf50' : score >= 50 ? '#ff9800' : '#ef5350') : '#455a64' },
-              { label: 'Scan Time',     icon: 'ti-clock',   value: scanning ? 'Live' : (results ? new Date(results.completed_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—'), sub: scanning ? 'In progress' : 'Last scan', subColor: '#455a64' },
-            ].map(card => (
-              <div key={card.label} style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: 10, color: '#455a64', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  {card.label}<i className={`ti ${card.icon}`} style={{ fontSize: 14, color: '#37637a' }} />
+          <div className="stat-grid">
+            {statCards.map(card => (
+              <div key={card.label} className="panel stat-card">
+                <div className="stat-label">
+                  {card.label}<i className={`ti ${card.icon}`} style={{ fontSize: 16, color: 'var(--orange)' }} />
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 500, color: '#e1f5fe', lineHeight: 1 }}>{card.value}</div>
-                <div style={{ fontSize: 10, marginTop: 4, color: card.subColor }}>{card.sub}</div>
+                <div className="stat-value">{card.value}</div>
+                <div className="stat-sub" style={{ color: card.subColor }}>{card.sub}</div>
               </div>
             ))}
           </div>
 
-          {/* Middle row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(360px, 1.5fr)', gap: 12, marginBottom: 14 }}>
-
-            {/* Attack path cards */}
-            <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14, maxHeight: 320, overflow: 'auto' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#607d8b', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 12 }}>
+          <div className="dashboard-grid">
+            <div className="panel" style={{ padding: 16, maxHeight: 340, overflow: 'auto' }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>
                 Attack Paths {results && `(${results.attack_paths?.length ?? 0})`}
               </div>
-              {!results && <div style={{ fontSize: 12, color: '#455a64', textAlign: 'center', paddingTop: 40 }}>Run a scan to see attack paths</div>}
-              {results?.attack_paths?.length === 0 && <div style={{ fontSize: 12, color: '#4caf50', textAlign: 'center', paddingTop: 40 }}>No attack paths found</div>}
+              {!results && <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'center', paddingTop: 48 }}>Run a scan to see attack paths</div>}
+              {results?.attack_paths?.length === 0 && <div style={{ fontSize: 12, color: 'var(--green)', textAlign: 'center', paddingTop: 48 }}>No attack paths found</div>}
               {results?.attack_paths?.map((path: any, i: number) => (
                 <AttackPathCard key={i} path={path} />
               ))}
             </div>
 
-            {/* Graph */}
-            <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14, height: 320 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#607d8b', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 8 }}>Resource Graph</div>
+            <div className="panel" style={{ padding: 16, height: 340 }}>
+              <div className="section-title" style={{ marginBottom: 8 }}>Resource Graph</div>
               {results?.graph_data
                 ? <SecurityGraph data={results.graph_data} attackPaths={results.attack_paths} />
-                : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '85%', color: '#37637a', fontSize: 12 }}>
-                    <i className="ti ti-topology-star-3" style={{ fontSize: 32, display: 'block', textAlign: 'center', marginBottom: 8 }} />
+                : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '85%', color: 'var(--text-dim)', fontSize: 12 }}>
+                    <i className="ti ti-topology-star-3" style={{ fontSize: 34, display: 'block', textAlign: 'center', marginBottom: 8, color: 'var(--blue)' }} />
                   </div>
               }
             </div>
           </div>
 
-          {/* Scan history table */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#607d8b', textTransform: 'uppercase', letterSpacing: '.7px' }}>Recent Compliance Scans</div>
+          <div className="panel" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <div className="section-title">Recent Compliance Scans</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                {[['ti-download','Export CSV',false],['ti-calendar','Schedule Scan',true]].map(([icon,label,primary]) => (
-                  <button key={label as string} style={{ fontSize: 10, padding: '5px 12px', borderRadius: 6, border: `1px solid ${primary ? '#1565c0' : '#1a2d45'}`, color: primary ? '#fff' : '#607d8b', background: primary ? '#1565c0' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                {[
+                  ['ti-download', 'Export CSV', false],
+                  ['ti-calendar', 'Schedule Scan', true],
+                ].map(([icon, label, primary]) => (
+                  <button key={label as string} style={{ fontSize: 11, padding: '7px 12px', borderRadius: 8, border: `1px solid ${primary ? 'rgba(255, 153, 0, .35)' : 'var(--border)'}`, color: primary ? '#111827' : 'var(--text-muted)', background: primary ? 'linear-gradient(135deg, #ff9900, #ec7211)' : 'rgba(35, 47, 62, .6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: primary ? 700 : 500 }}>
                     <i className={`ti ${icon}`} style={{ fontSize: 12 }} />{label}
                   </button>
                 ))}
               </div>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>{['Scan ID','Target Environment','Status','Completed','Findings','Action'].map(h => (
-                  <th key={h} style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', padding: '6px 8px', textAlign: 'left', borderBottom: '1px solid #1a2d45' }}>{h}</th>
-                ))}</tr>
-              </thead>
-              <tbody>
-                {results
-                  ? <tr>
-                      <td style={{ fontSize: 10, fontFamily: 'monospace', color: '#4fc3f7', padding: '8px', borderBottom: '1px solid #0d1e2f' }}>SCN-{Math.floor(Math.random()*9000+1000)}</td>
-                      <td style={{ fontSize: 11, color: '#b0bec5', padding: 8, borderBottom: '1px solid #0d1e2f' }}>Production — AP South</td>
-                      <td style={{ padding: 8, borderBottom: '1px solid #0d1e2f' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#071a0f', color: '#4caf50' }}><i className="ti ti-circle-check" style={{ fontSize: 11 }} />Completed</span></td>
-                      <td style={{ fontSize: 11, color: '#455a64', padding: 8, borderBottom: '1px solid #0d1e2f' }}>{new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</td>
-                      <td style={{ padding: 8, borderBottom: '1px solid #0d1e2f' }}>
-                        <div style={{ display: 'flex', gap: 3 }}>
-                          {[['CRIT',results.attack_paths?.filter((p:any)=>p.exploitability==='CRITICAL').length??0,'#1a0a0a','#ef5350'],['HIGH',results.attack_paths?.filter((p:any)=>p.exploitability==='HIGH').length??0,'#1a1000','#ff9800'],['MED',results.attack_paths?.filter((p:any)=>p.exploitability==='MEDIUM').length??0,'#071929','#4fc3f7']].map(([l,v,bg,col])=>(
-                            <span key={l as string} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, fontWeight: 500, background: bg as string, color: col as string }}>{l}: {v}</span>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ padding: 8, borderBottom: '1px solid #0d1e2f' }}><i className="ti ti-eye" style={{ fontSize: 15, color: '#37637a', cursor: 'pointer' }} /></td>
-                    </tr>
-                  : [['SCN-4421','Production Cluster','ok','Oct 24, 2023','12','43','88'],['SCN-4420','Staging Environment','ok','Oct 23, 2023','3','17','42']].map(row => (
-                      <tr key={row[0]}>
-                        <td style={{ fontSize: 10, fontFamily: 'monospace', color: '#4fc3f7', padding: '8px', borderBottom: '1px solid #0d1e2f' }}>{row[0]}</td>
-                        <td style={{ fontSize: 11, color: '#b0bec5', padding: 8, borderBottom: '1px solid #0d1e2f' }}>{row[1]}</td>
-                        <td style={{ padding: 8, borderBottom: '1px solid #0d1e2f' }}><span style={{ display:'inline-flex',alignItems:'center',gap:4,fontSize:10,padding:'2px 8px',borderRadius:4,background:'#071a0f',color:'#4caf50' }}><i className="ti ti-circle-check" style={{fontSize:11}} />Completed</span></td>
-                        <td style={{ fontSize: 11, color: '#455a64', padding: 8, borderBottom: '1px solid #0d1e2f' }}>{row[3]}</td>
-                        <td style={{ padding: 8, borderBottom: '1px solid #0d1e2f' }}><div style={{display:'flex',gap:3}}><span style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:'#1a0a0a',color:'#ef5350'}}>{row[4]}</span><span style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:'#1a1000',color:'#ff9800'}}>{row[5]}</span><span style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:'#071929',color:'#4fc3f7'}}>{row[6]}</span></div></td>
-                        <td style={{ padding: 8, borderBottom: '1px solid #0d1e2f' }}><i className="ti ti-eye" style={{fontSize:15,color:'#37637a',cursor:'pointer'}} /></td>
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>{['Scan ID', 'Target Environment', 'Status', 'Completed', 'Findings', 'Action'].map(h => (
+                    <th key={h}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {results
+                    ? <tr>
+                        <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: 'var(--cyan)', padding: 10 }}>SCN-{Math.floor(Math.random() * 9000 + 1000)}</td>
+                        <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>Production - AP South</td>
+                        <td style={{ padding: 10 }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999, background: 'rgba(122, 161, 22, .14)', color: 'var(--green)' }}><i className="ti ti-circle-check" style={{ fontSize: 11 }} />Completed</span></td>
+                        <td style={{ fontSize: 12, color: 'var(--text-muted)', padding: 10 }}>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                        <td style={{ padding: 10 }}>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {[
+                              ['CRIT', results.attack_paths?.filter((p: any) => p.exploitability === 'CRITICAL').length ?? 0, 'rgba(209, 50, 18, .14)', 'var(--red)'],
+                              ['HIGH', results.attack_paths?.filter((p: any) => p.exploitability === 'HIGH').length ?? 0, 'rgba(255, 153, 0, .14)', 'var(--orange)'],
+                              ['MED', results.attack_paths?.filter((p: any) => p.exploitability === 'MEDIUM').length ?? 0, 'rgba(20, 110, 180, .16)', 'var(--blue)'],
+                            ].map(([l, v, bg, col]) => (
+                              <span key={l as string} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, fontWeight: 650, background: bg as string, color: col as string }}>{l}: {v}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={{ padding: 10 }}><i className="ti ti-eye" style={{ fontSize: 16, color: 'var(--text-muted)', cursor: 'pointer' }} /></td>
                       </tr>
-                    ))
-                }
-              </tbody>
-            </table>
+                    : [['SCN-4421', 'Production Cluster', 'Oct 24, 2023', '12', '43', '88'], ['SCN-4420', 'Staging Environment', 'Oct 23, 2023', '3', '17', '42']].map(row => (
+                        <tr key={row[0]}>
+                          <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: 'var(--cyan)', padding: 10 }}>{row[0]}</td>
+                          <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>{row[1]}</td>
+                          <td style={{ padding: 10 }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999, background: 'rgba(122, 161, 22, .14)', color: 'var(--green)' }}><i className="ti ti-circle-check" style={{ fontSize: 11 }} />Completed</span></td>
+                          <td style={{ fontSize: 12, color: 'var(--text-muted)', padding: 10 }}>{row[2]}</td>
+                          <td style={{ padding: 10 }}><div style={{ display: 'flex', gap: 4 }}><span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(209, 50, 18, .14)', color: 'var(--red)' }}>{row[3]}</span><span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(255, 153, 0, .14)', color: 'var(--orange)' }}>{row[4]}</span><span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(20, 110, 180, .16)', color: 'var(--blue)' }}>{row[5]}</span></div></td>
+                          <td style={{ padding: 10 }}><i className="ti ti-eye" style={{ fontSize: 16, color: 'var(--text-muted)', cursor: 'pointer' }} /></td>
+                        </tr>
+                      ))
+                  }
+                </tbody>
+              </table>
             </div>
           </div>
-
         </div>
       </div>
 

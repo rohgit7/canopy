@@ -25,7 +25,7 @@ export default function AttackPathsPage() {
   }), {} as Record<string,number>)
 
   const badgeCol: Record<string,string> = {
-    CRITICAL:'#ef5350', HIGH:'#ff9800', MEDIUM:'#4fc3f7', LOW:'#4caf50'
+    CRITICAL:'var(--aws-risk)', HIGH:'var(--aws-orange)', MEDIUM:'var(--aws-blue)', LOW:'var(--aws-storage)'
   }
 
   return (
@@ -36,7 +36,7 @@ export default function AttackPathsPage() {
         {FILTERS.map(f => (
           <button key={f} onClick={() => setFilter(f)} style={{
             padding: '6px 14px', fontSize: 11, borderRadius: 6, cursor: 'pointer',
-            border: `1px solid ${filter===f ? (badgeCol[f]||'#4fc3f7') : '#1a2d45'}`,
+            border: `1px solid ${filter===f ? (badgeCol[f]||'var(--aws-blue)') : '#1a2d45'}`,
             background: filter===f ? (f==='ALL'?'#1565c0':'#0f1a2a') : 'transparent',
             color: filter===f ? (badgeCol[f]||'#fff') : '#607d8b',
             fontWeight: filter===f ? 500 : 400,
@@ -68,8 +68,8 @@ export default function AttackPathsPage() {
       {loading && <div style={{ color: '#37637a', fontSize: 13, textAlign: 'center', paddingTop: 60 }}>Loading scan results...</div>}
       {!loading && filtered.length === 0 && (
         <div style={{ textAlign: 'center', paddingTop: 60 }}>
-          <i className="ti ti-shield-check" style={{ fontSize: 40, color: '#4caf50', display: 'block', marginBottom: 12 }} />
-          <div style={{ color: '#4caf50', fontSize: 14 }}>No {filter !== 'ALL' ? filter : ''} attack paths found</div>
+          <i className="ti ti-shield-check" style={{ fontSize: 40, color: 'var(--aws-storage)', display: 'block', marginBottom: 12 }} />
+          <div style={{ color: 'var(--aws-storage)', fontSize: 14 }}>No {filter !== 'ALL' ? filter : ''} attack paths found</div>
           <div style={{ color: '#455a64', fontSize: 12, marginTop: 4 }}>Run a scan from the Dashboard to refresh results</div>
         </div>
       )}

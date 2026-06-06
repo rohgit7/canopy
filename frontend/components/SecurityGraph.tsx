@@ -3,13 +3,13 @@ import { useEffect, useRef } from 'react'
 import cytoscape from 'cytoscape'
 
 const TYPE_COLORS: Record<string, string> = {
-  'ec2:instance':      '#3b82f6',
-  's3:bucket':         '#f59e0b',
-  'iam:role':          '#8b5cf6',
-  'iam:user':          '#a78bfa',
-  'lambda:function':   '#f97316',
-  'ec2:security_group':'#6b7280',
-  'pseudo:internet':   '#ef4444',
+  'ec2:instance':      '#ff9900',
+  's3:bucket':         '#7aa116',
+  'iam:role':          '#8c4fff',
+  'iam:user':          '#b088ff',
+  'lambda:function':   '#ec7211',
+  'ec2:security_group':'#146eb4',
+  'pseudo:internet':   '#d13212',
 }
 
 export function SecurityGraph({
@@ -53,17 +53,17 @@ export function SecurityGraph({
             'border-width':      (n: any) =>
               n.data('is_sensitive') ? 3 : n.data('internet_facing') ? 3 : 1,
             'border-color':      (n: any) =>
-              n.data('is_sensitive') ? '#ef4444'
-              : n.data('internet_facing') ? '#f97316'
-              : '#475569',
+              n.data('is_sensitive') ? '#d13212'
+              : n.data('internet_facing') ? '#ff9900'
+              : '#68778d',
           } as any,
         },
         {
           selector: 'edge',
           style: {
             width:                (e: any) => Math.max(1, 4 - e.data('weight') * 3),
-            'line-color':         (e: any) => e.data('weight') < 0.3 ? '#ef4444' : '#374151',
-            'target-arrow-color': (e: any) => e.data('weight') < 0.3 ? '#ef4444' : '#374151',
+            'line-color':         (e: any) => e.data('weight') < 0.3 ? '#d13212' : '#4d5f75',
+            'target-arrow-color': (e: any) => e.data('weight') < 0.3 ? '#d13212' : '#4d5f75',
             'target-arrow-shape': 'triangle',
             'curve-style':        'bezier',
           } as any,
@@ -71,9 +71,9 @@ export function SecurityGraph({
         {
           selector: '.attack-path',
           style: {
-            'line-color':         '#ef4444',
+            'line-color':         '#d13212',
             width:                4,
-            'target-arrow-color': '#ef4444',
+            'target-arrow-color': '#d13212',
           },
         },
       ],

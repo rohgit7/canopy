@@ -34,8 +34,8 @@ export default function AIReportsPage() {
       {!loading && (
         <>
           {/* Executive summary */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderLeft: '4px solid #4fc3f7', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-            <div style={{ fontSize: 12, color: '#4fc3f7', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>
+          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderLeft: '4px solid var(--aws-blue)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: 'var(--aws-blue)', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>
               Executive Summary
             </div>
             <p style={{ fontSize: 13, color: '#b0bec5', lineHeight: 1.7, margin: 0 }}>
@@ -72,7 +72,7 @@ export default function AIReportsPage() {
                   {/* Header */}
                   <div style={{ background: '#0f1a2a', padding: '14px 18px', borderBottom: '1px solid #1a2d45', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 4, background: '#1a0a0a', color: '#ef5350', fontWeight: 500 }}>
+                      <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 4, background: 'rgba(209, 50, 18, .14)', color: 'var(--aws-risk)', fontWeight: 500 }}>
                         {path.exploitability}
                       </span>
                       <span style={{ fontSize: 14, fontWeight: 500, color: '#e1f5fe' }}>
@@ -92,11 +92,11 @@ export default function AIReportsPage() {
                     </div>
                     <div>
                       <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 6 }}>Business Impact</div>
-                      <p style={{ fontSize: 12, color: '#ff9800', lineHeight: 1.7, margin: 0 }}>{nar.business_impact}</p>
+                      <p style={{ fontSize: 12, color: 'var(--aws-orange)', lineHeight: 1.7, margin: 0 }}>{nar.business_impact}</p>
                     </div>
                     <div>
                       <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 6 }}>Recommended Fix</div>
-                      <p style={{ fontSize: 12, color: '#4caf50', lineHeight: 1.7, margin: 0 }}>
+                      <p style={{ fontSize: 12, color: 'var(--aws-storage)', lineHeight: 1.7, margin: 0 }}>
                         {nar.fix}
                         {nar.fix_time && <span style={{ color: '#37637a', marginLeft: 6 }}>({nar.fix_time})</span>}
                       </p>
@@ -106,7 +106,7 @@ export default function AIReportsPage() {
                       <p style={{ fontSize: 12, color: '#b0bec5', lineHeight: 1.7, margin: 0 }}>
                         Difficulty: <span style={{ color: '#e1f5fe' }}>{nar.attacker_difficulty}</span>
                         <br />
-                        Time to exploit: <span style={{ color: '#ef5350' }}>{nar.time_to_exploit}</span>
+                        Time to exploit: <span style={{ color: 'var(--aws-risk)' }}>{nar.time_to_exploit}</span>
                       </p>
                     </div>
                   </div>
@@ -118,7 +118,7 @@ export default function AIReportsPage() {
                         <span style={{ fontSize: 10, padding: '2px 8px', background: '#0f2236', color: '#90caf9', borderRadius: 4 }}>{h.source_name}</span>
                         <i className="ti ti-arrow-right" style={{ fontSize: 10, color: '#37637a' }} />
                         {hi === path.hops.length - 1 && (
-                          <span style={{ fontSize: 10, padding: '2px 8px', background: '#1a0a0a', color: '#ef5350', borderRadius: 4 }}>{h.target_name}</span>
+                          <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(209, 50, 18, .14)', color: 'var(--aws-risk)', borderRadius: 4 }}>{h.target_name}</span>
                         )}
                       </span>
                     ))}

@@ -18,7 +18,7 @@ export default function BlastRadiusPage() {
   const sorted = [...paths].sort((a, b) => (b.blast_radius||0) - (a.blast_radius||0))
 
   const getColor = (score: number) =>
-    score > 70 ? '#ef5350' : score > 40 ? '#ff9800' : '#4caf50'
+    score > 70 ? 'var(--aws-risk)' : score > 40 ? 'var(--aws-orange)' : 'var(--aws-storage)'
 
   const getLabel = (score: number) =>
     score > 70 ? 'Critical' : score > 40 ? 'High' : 'Moderate'
@@ -29,9 +29,9 @@ export default function BlastRadiusPage() {
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Max Blast Radius', value: paths.length ? `${Math.max(...paths.map(p=>p.blast_radius??0)).toFixed(0)}%` : '—', color: '#ef5350' },
-          { label: 'Avg Blast Radius', value: paths.length ? `${(paths.reduce((s,p)=>s+(p.blast_radius??0),0)/paths.length).toFixed(0)}%` : '—', color: '#ff9800' },
-          { label: 'Paths Analysed',   value: paths.length, color: '#4fc3f7' },
+          { label: 'Max Blast Radius', value: paths.length ? `${Math.max(...paths.map(p=>p.blast_radius??0)).toFixed(0)}%` : '—', color: 'var(--aws-risk)' },
+          { label: 'Avg Blast Radius', value: paths.length ? `${(paths.reduce((s,p)=>s+(p.blast_radius??0),0)/paths.length).toFixed(0)}%` : '—', color: 'var(--aws-orange)' },
+          { label: 'Paths Analysed',   value: paths.length, color: 'var(--aws-blue)' },
         ].map(c => (
           <div key={c.label} style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 16 }}>
             <div style={{ fontSize: 10, color: '#455a64', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 8 }}>{c.label}</div>
@@ -52,7 +52,7 @@ export default function BlastRadiusPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#1a0a0a', color: '#ef5350', fontWeight: 500 }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(209, 50, 18, .14)', color: 'var(--aws-risk)', fontWeight: 500 }}>
                       {path.exploitability}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#e1f5fe' }}>→ {path.target_name}</span>

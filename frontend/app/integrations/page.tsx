@@ -1,18 +1,18 @@
 import { PageLayout } from '@/components/PageLayout'
 
 const INTEGRATIONS = [
-  { name: 'AWS CloudTrail', desc: 'Stream real-time events and detect configuration changes as they happen.', icon: 'ti-activity', color: '#ff9800', status: 'coming_soon' },
-  { name: 'AWS Config',     desc: 'Continuous compliance monitoring and resource configuration history.', icon: 'ti-settings-2', color: '#4fc3f7', status: 'coming_soon' },
-  { name: 'Slack',          desc: 'Receive instant alerts when new critical attack paths are detected.', icon: 'ti-brand-slack', color: '#4caf50', status: 'coming_soon' },
-  { name: 'PagerDuty',      desc: 'Automatically page on-call engineers for critical security findings.', icon: 'ti-bell-ringing', color: '#ef5350', status: 'coming_soon' },
-  { name: 'Jira',           desc: 'Create tickets automatically for each attack path finding.', icon: 'ti-brand-asana', color: '#8b5cf6', status: 'coming_soon' },
+  { name: 'AWS CloudTrail', desc: 'Stream real-time events and detect configuration changes as they happen.', icon: 'ti-activity', color: 'var(--aws-orange)', status: 'coming_soon' },
+  { name: 'AWS Config',     desc: 'Continuous compliance monitoring and resource configuration history.', icon: 'ti-settings-2', color: 'var(--aws-blue)', status: 'coming_soon' },
+  { name: 'Slack',          desc: 'Receive instant alerts when new critical attack paths are detected.', icon: 'ti-brand-slack', color: 'var(--aws-storage)', status: 'coming_soon' },
+  { name: 'PagerDuty',      desc: 'Automatically page on-call engineers for critical security findings.', icon: 'ti-bell-ringing', color: 'var(--aws-risk)', status: 'coming_soon' },
+  { name: 'Jira',           desc: 'Create tickets automatically for each attack path finding.', icon: 'ti-brand-asana', color: 'var(--aws-identity)', status: 'coming_soon' },
   { name: 'GitHub Actions', desc: 'Run Canopy scans as part of your CI/CD pipeline on every deploy.', icon: 'ti-brand-github', color: '#b0bec5', status: 'coming_soon' },
 ]
 
 export default function IntegrationsPage() {
   return (
     <PageLayout title="Integrations" subtitle="Connect Canopy to your existing tools and workflows">
-      <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderLeft: '4px solid #ff9800', borderRadius: 8, padding: 14, marginBottom: 24, fontSize: 12, color: '#ff9800' }}>
+      <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderLeft: '4px solid var(--aws-orange)', borderRadius: 8, padding: 14, marginBottom: 24, fontSize: 12, color: 'var(--aws-orange)' }}>
         <i className="ti ti-tool" style={{ marginRight: 8 }} />
         Integrations are coming in the next release. The list below shows planned connectors.
       </div>

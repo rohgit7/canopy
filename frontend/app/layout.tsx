@@ -1,6 +1,19 @@
 import { ClerkProvider } from '@clerk/nextjs'
+import localFont from 'next/font/local'
 
 import './globals.css'
+
+const geistSans = localFont({
+  src: './fonts/GeistVF.woff',
+  variable: '--font-geist-sans',
+  display: 'swap',
+})
+
+const geistMono = localFont({
+  src: './fonts/GeistMonoVF.woff',
+  variable: '--font-geist-mono',
+  display: 'swap',
+})
 
 export default function RootLayout({
   children,
@@ -10,7 +23,7 @@ export default function RootLayout({
   return (
     <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
-        <body className="bg-gray-950 text-white min-h-screen">
+        <body className={`${geistSans.variable} ${geistMono.variable}`}>
           {children}
         </body>
       </html>

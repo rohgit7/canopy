@@ -20,42 +20,27 @@ export function Sidebar({ onScan, scanning }: {
   const router   = useRouter()
 
   return (
-    <aside style={{
-      width: 200, background: '#0a1929',
-      borderRight: '1px solid #1a2d45',
-      display: 'flex', flexDirection: 'column', flexShrink: 0,
-    }}>
-      {/* Logo */}
-      <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid #1a2d45' }}>
+    <aside className="sidebar">
+      <div className="sidebar-brand">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <i className="ti ti-shield-lock" style={{ fontSize: 20, color: '#4fc3f7' }} />
+          <div className="brand-mark">
+            <i className="ti ti-shield-lock" style={{ fontSize: 20 }} />
+          </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#4fc3f7', letterSpacing: '.5px' }}>
-              CANOPY
-            </div>
-            <div style={{ fontSize: 10, color: '#37637a', letterSpacing: '1px', textTransform: 'uppercase', marginTop: 2 }}>
-              AWS Security Platform
-            </div>
+            <div className="brand-title">CANOPY</div>
+            <div className="brand-subtitle">AWS Security Platform</div>
           </div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 0' }}>
+      <nav className="sidebar-nav">
         {NAV_ITEMS.map(item => {
           const active = pathname === item.href
           return (
             <div
               key={item.label}
               onClick={() => router.push(item.href)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 16px', fontSize: 12, cursor: 'pointer',
-                color:      active ? '#4fc3f7' : '#607d8b',
-                background: active ? '#0f2236' : 'transparent',
-                borderLeft: active ? '2px solid #4fc3f7' : '2px solid transparent',
-                transition: 'all .15s',
-              }}
+              className={`sidebar-link${active ? ' active' : ''}`}
             >
               <i className={`ti ${item.icon}`} style={{ fontSize: 16 }} />
               {item.label}
@@ -68,24 +53,18 @@ export function Sidebar({ onScan, scanning }: {
         <button
           onClick={onScan}
           disabled={scanning}
-          style={{
-            margin: '0 12px 12px', padding: '10px',
-            background: scanning ? '#0f2236' : '#1565c0',
-            color: '#fff', border: 'none', borderRadius: 8,
-            fontSize: 12, fontWeight: 500,
-            cursor: scanning ? 'not-allowed' : 'pointer',
-          }}
+          className="scan-button"
         >
           <i className="ti ti-player-play" style={{ fontSize: 12, marginRight: 4 }} />
           {scanning ? 'SCANNING...' : 'START SCAN'}
         </button>
       )}
 
-      <div style={{ padding: '12px 16px', borderTop: '1px solid #1a2d45', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div className="sidebar-footer">
         {[['ti-file-description', 'Docs'], ['ti-logout', 'Logout']].map(([icon, label]) => (
           <div
             key={label}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#455a64', cursor: 'pointer' }}
+            className="sidebar-footer-link"
           >
             <i className={`ti ${icon}`} style={{ fontSize: 14 }} />{label}
           </div>

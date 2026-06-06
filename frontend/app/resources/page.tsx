@@ -23,13 +23,13 @@ const TYPE_ICONS: Record<string,string> = {
   'pseudo:internet':    'ti-world',
 }
 const TYPE_COLORS: Record<string,string> = {
-  'ec2:instance':       '#3b82f6',
+  'ec2:instance':       'var(--aws-orange)',
   'ec2:security_group': '#6b7280',
-  's3:bucket':          '#f59e0b',
-  'iam:role':           '#8b5cf6',
-  'iam:user':           '#a78bfa',
-  'lambda:function':    '#f97316',
-  'pseudo:internet':    '#ef4444',
+  's3:bucket':          'var(--aws-storage)',
+  'iam:role':           'var(--aws-identity)',
+  'iam:user':           '#b088ff',
+  'lambda:function':    '#ec7211',
+  'pseudo:internet':    'var(--aws-risk)',
 }
 
 export default function ResourcesPage() {
@@ -66,7 +66,7 @@ export default function ResourcesPage() {
           <div key={type}
             onClick={() => setFilter(filter===type?'ALL':type)}
             style={{
-              background: '#0a1929', border: `1px solid ${filter===type?(TYPE_COLORS[type]||'#4fc3f7'):'#1a2d45'}`,
+              background: '#0a1929', border: `1px solid ${filter===type?(TYPE_COLORS[type]||'var(--aws-blue)'):'#1a2d45'}`,
               borderRadius: 8, padding: 12, cursor: 'pointer',
             }}>
             <i className={`ti ${TYPE_ICONS[type]||'ti-box'}`} style={{ fontSize: 20, color: TYPE_COLORS[type]||'#607d8b', display: 'block', marginBottom: 6 }} />
@@ -118,13 +118,13 @@ export default function ResourcesPage() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     {n.internet_facing
-                      ? <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#1a0a0a', color: '#ef5350' }}>Yes</span>
-                      : <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#071a0f', color: '#4caf50' }}>No</span>
+                      ? <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(209, 50, 18, .14)', color: 'var(--aws-risk)' }}>Yes</span>
+                      : <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(122, 161, 22, .14)', color: 'var(--aws-storage)' }}>No</span>
                     }
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     {n.is_sensitive
-                      ? <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: '#1a0a0a', color: '#ef5350' }}>Sensitive</span>
+                      ? <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(209, 50, 18, .14)', color: 'var(--aws-risk)' }}>Sensitive</span>
                       : <span style={{ fontSize: 10, color: '#37637a' }}>—</span>
                     }
                   </td>
