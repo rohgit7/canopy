@@ -23,9 +23,9 @@ export function Sidebar({ onScan, scanning }: {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div className="brand-mark">
-            <i className="ti ti-shield-lock" style={{ fontSize: 20 }} />
+            <img src="/canopy-logo.svg" alt="Canopy logo" className="brand-logo" />
           </div>
           <div>
             <div className="brand-title">CANOPY</div>

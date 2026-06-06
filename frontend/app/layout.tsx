@@ -24,6 +24,9 @@ export default function RootLayout({
   return (
     <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
+        <head>
+          <link rel="icon" href="/canopy.ico" />
+        </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
           <ScanProvider>
             {children}
