@@ -29,7 +29,6 @@ export function Sidebar({ onScan, scanning }: {
           </div>
           <div>
             <div className="brand-title">CANOPY</div>
-            <div className="brand-subtitle">AWS Security Platform</div>
           </div>
         </div>
       </div>
