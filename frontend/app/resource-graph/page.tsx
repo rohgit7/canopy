@@ -105,7 +105,7 @@ function Tooltip({ x, y, data, onClose }: { x: number; y: number; data: any; onC
 export default function ResourceGraphPage() {
   const cyRef      = useRef<HTMLDivElement>(null)
   const cy         = useRef<any>(null)
-  const { results } = useScan()
+  const { results, loaded } = useScan()
   const [graphData, setGraphData]   = useState<any>(null)
   const [paths,     setPaths]       = useState<any[]>([])
   const [loading,   setLoading]     = useState(true)
@@ -119,38 +119,23 @@ export default function ResourceGraphPage() {
 
   // Fetch data
   useEffect(() => {
-    let cancelled = false
-
-    const populate = (d: any) => {
-      setGraphData(d?.graph_data || null)
-      setPaths(d?.attack_paths || [])
-      const nodes = d?.graph_data?.nodes || []
+    if (results) {
+      setGraphData(results.graph_data || null)
+      setPaths(results.attack_paths || [])
+      const nodes = results.graph_data?.nodes || []
       setStats({
         nodes:     nodes.length,
-        edges:     d?.graph_data?.links?.length || 0,
+        edges:     results.graph_data?.links?.length || 0,
         internet:  nodes.filter((n: any) => n.internet_facing).length,
         sensitive: nodes.filter((n: any) => n.is_sensitive).length,
         admin:     nodes.filter((n: any) => n.is_admin).length,
       })
       setLoading(false)
+    } else if (loaded) {
+      setLoading(false)
     }
+  }, [results, loaded])
 
-    if (results?.graph_data) {
-      populate(results)
-      return
-    }
-
-    requestJson('/dashboard/me').then((d: any) => {
-      if (cancelled) return
-      populate(d)
-    }).catch(() => {
-      if (!cancelled) setLoading(false)
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [results])
 
 
   // Build Cytoscape
@@ -282,6 +267,8 @@ export default function ResourceGraphPage() {
       layout: {
         name: layout,
         animate: false,
+        randomize: false,
+        numIter: 150,
         idealEdgeLength: 100,
         nodeRepulsion: 8000,
         padding: 40,
@@ -292,6 +279,7 @@ export default function ResourceGraphPage() {
           }
         },
       } as any,
+
     })
 
     // Tooltip on hover

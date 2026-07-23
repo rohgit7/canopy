@@ -77,7 +77,17 @@ export function SecurityGraph({
           },
         },
       ],
-      layout: { name: 'cose', animate: false, idealEdgeLength: 80 } as any,
+      layout: {
+        name: 'cose',
+        animate: false,
+        randomize: false,
+        numIter: 150,
+        initialTemp: 200,
+        coolingFactor: 0.99,
+        idealEdgeLength: 80,
+        nodeOverlap: 20,
+      } as any,
+
     })
 
     if (attackPaths?.length > 0) {

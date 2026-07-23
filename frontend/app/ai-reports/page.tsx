@@ -9,33 +9,21 @@ function tryParse(s: string) {
 }
 
 export default function AIReportsPage() {
-  const { results } = useScan()
+  const { results, loaded } = useScan()
   const [paths,   setPaths]   = useState<any[]>([])
   const [score,   setScore]   = useState<number|null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false
     if (results) {
       setPaths(results.attack_paths || [])
       setScore(results.score ?? null)
       setLoading(false)
-      return
-    }
-
-    requestJson('/dashboard/me').then((d: any) => {
-      if (cancelled) return
-      setPaths(d?.attack_paths || [])
-      setScore(d?.score ?? null)
+    } else if (loaded) {
       setLoading(false)
-    }).catch(() => {
-      if (!cancelled) setLoading(false)
-    })
-
-    return () => {
-      cancelled = true
     }
-  }, [results])
+  }, [results, loaded])
+
 
 
   const narrated = paths.filter(p => p.ai_narrative)

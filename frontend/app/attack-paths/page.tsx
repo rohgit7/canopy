@@ -6,31 +6,20 @@ import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 export default function AttackPathsPage() {
-  const { results } = useScan()
+  const { results, loaded } = useScan()
   const [paths,  setPaths]  = useState<any[]>([])
   const [loading,setLoading]= useState(true)
   const [filter, setFilter] = useState<string>('ALL')
 
   useEffect(() => {
-    let cancelled = false
-    if (results?.attack_paths) {
-      setPaths(results.attack_paths)
+    if (results) {
+      setPaths(results.attack_paths || [])
       setLoading(false)
-      return
-    }
-
-    requestJson('/dashboard/me').then((d: any) => {
-      if (cancelled) return
-      setPaths(d?.attack_paths || [])
+    } else if (loaded) {
       setLoading(false)
-    }).catch(() => {
-      if (!cancelled) setLoading(false)
-    })
-
-    return () => {
-      cancelled = true
     }
-  }, [results])
+  }, [results, loaded])
+
 
 
   const FILTERS = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']

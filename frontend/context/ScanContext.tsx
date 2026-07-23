@@ -1,8 +1,9 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
-import { getDashboard, getConnection, ConnectionInfo, ScanResult } from '@/lib/api'
+import { getDashboard, getConnection, getScan, ConnectionInfo, ScanResult } from '@/lib/api'
 
 interface ScanContextType {
+
   results: ScanResult | null
   setResults: (results: ScanResult | null) => void
   scanId: string | null
@@ -11,7 +12,9 @@ interface ScanContextType {
   setScanning: (scanning: boolean) => void
   connection: ConnectionInfo | null
   setConnection: (connection: ConnectionInfo | null) => void
+  loaded: boolean
   refreshData: () => Promise<void>
+  selectScan: (scanId: string) => Promise<void>
 }
 
 const ScanContext = createContext<ScanContextType | undefined>(undefined)
@@ -21,6 +24,7 @@ export function ScanProvider({ children }: { children: ReactNode }) {
   const [scanId, setScanId] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
   const [connection, setConnection] = useState<ConnectionInfo | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   const refreshData = useCallback(async () => {
     try {
@@ -28,14 +32,31 @@ export function ScanProvider({ children }: { children: ReactNode }) {
         getDashboard('me'),
         getConnection('me')
       ])
-      if (dashData && dashData.status !== 'no_scan') {
+      if (dashData) {
         setResults(dashData)
+        if (dashData.scan_id) {
+          setScanId(dashData.scan_id)
+        }
       }
       if (connData) {
         setConnection(connData)
       }
     } catch {
       // Ignore initial fetch errors if backend is starting
+    } finally {
+      setLoaded(true)
+    }
+  }, [])
+
+  const selectScan = useCallback(async (targetScanId: string) => {
+    try {
+      const scanData = await getScan(targetScanId)
+      if (scanData) {
+        setResults(scanData)
+        setScanId(targetScanId)
+      }
+    } catch {
+      // Ignore fetch error
     }
   }, [])
 
@@ -49,12 +70,16 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       scanId, setScanId,
       scanning, setScanning,
       connection, setConnection,
-      refreshData
+      loaded,
+      refreshData,
+      selectScan
     }}>
       {children}
     </ScanContext.Provider>
   )
 }
+
+
 
 export function useScan() {
   const context = useContext(ScanContext)

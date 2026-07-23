@@ -251,9 +251,11 @@ def _serialise(doc: dict) -> dict:
     out = {}
     for k, v in doc.items():
         if isinstance(v, datetime):
-            out[k] = v.isoformat()
+            iso = v.isoformat()
+            out[k] = iso if iso.endswith("Z") or "+" in iso else f"{iso}Z"
         else:
             out[k] = v
     return out
+
 
 handler = Mangum(app)

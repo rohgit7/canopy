@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, ChevronUp, Copy, LogOut, Settings, Shield } from 'lucide-react'
+import { useScan } from '@/context/ScanContext'
 
 const truncateValue = (value: string, maxLength = 32) => {
   if (value.length <= maxLength) return value
@@ -14,17 +15,13 @@ export function UserMenu() {
   const router = useRouter()
   const { user } = useUser()
   const { signOut } = useClerk()
+  const { connection } = useScan()
   const [open, setOpen] = useState(false)
-  const [roleArn, setRoleArn] = useState<string | null>(null)
-  const [accountId, setAccountId] = useState<string | null>(null)
-  const [region, setRegion] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    setRoleArn(localStorage.getItem('canopyRoleArn'))
-    setAccountId(localStorage.getItem('canopyAwsAccountId'))
-    setRegion(localStorage.getItem('canopyAwsRegion'))
-  }, [])
+  const roleArn = connection?.role_arn || (typeof window !== 'undefined' ? localStorage.getItem('canopyRoleArn') || localStorage.getItem('canopy_role_arn') : null)
+  const accountId = connection?.account_id || (typeof window !== 'undefined' ? localStorage.getItem('canopyAwsAccountId') : null)
+  const region = 'ap-south-1'
 
   useEffect(() => {
     if (!copied) return
@@ -33,16 +30,17 @@ export function UserMenu() {
   }, [copied])
 
   const displayName = useMemo(() => {
-    if (!user) return 'Your profile'
-    return user.fullName || user.username || user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || 'Your profile'
+    if (!user) return 'User Profile'
+    return user.fullName || user.username || user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || 'User Profile'
   }, [user])
 
   const accountLabel = accountId ? `AWS ${accountId}` : 'Not connected'
-  const connectionStatus = roleArn ? 'Connected' : 'Not connected'
+  const connectionStatus = roleArn || accountId ? 'Connected' : 'Not connected'
   const handleLogout = async () => {
     setOpen(false)
     await signOut({ redirectUrl: '/' })
   }
+
 
   const handleCopyArn = async () => {
     if (!roleArn) return

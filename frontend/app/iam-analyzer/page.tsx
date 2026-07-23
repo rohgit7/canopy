@@ -5,33 +5,21 @@ import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 export default function IAMAnalyzerPage() {
-  const { results } = useScan()
+  const { results, loaded } = useScan()
   const [nodes,   setNodes]   = useState<any[]>([])
   const [edges,   setEdges]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false
-    if (results?.graph_data) {
-      setNodes(results.graph_data.nodes || [])
-      setEdges(results.graph_data.links || [])
+    if (results) {
+      setNodes(results.graph_data?.nodes || [])
+      setEdges(results.graph_data?.links || [])
       setLoading(false)
-      return
-    }
-
-    requestJson('/dashboard/me').then((d: any) => {
-      if (cancelled) return
-      setNodes(d?.graph_data?.nodes || [])
-      setEdges(d?.graph_data?.links || [])
+    } else if (loaded) {
       setLoading(false)
-    }).catch(() => {
-      if (!cancelled) setLoading(false)
-    })
-
-    return () => {
-      cancelled = true
     }
-  }, [results])
+  }, [results, loaded])
+
 
 
   const roles  = nodes.filter((n:any) => n.type === 'iam:role')

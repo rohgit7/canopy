@@ -5,12 +5,15 @@ import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
 import { Sidebar } from '@/components/Sidebar'
 import { ScheduleScanModal } from '@/components/ScheduleScanModal'
+import { UserMenu } from '@/components/UserMenu'
 import { useScan } from '@/context/ScanContext'
+
 import { buildApiUrl, getScanHistory, ScanResult } from '@/lib/api'
 
 export default function Dashboard() {
   const { getToken } = useAuth()
-  const { scanId, setScanId, scanning, setScanning, results, setResults, connection, refreshData } = useScan()
+  const { scanId, setScanId, scanning, setScanning, results, setResults, connection, refreshData, selectScan } = useScan()
+
   const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [scanHistory, setScanHistory] = useState<ScanResult[]>([])
@@ -134,6 +137,22 @@ export default function Dashboard() {
     }
   }, [scanId, scanning, setResults, setScanning, refreshData, loadHistory])
 
+  const formatScanTime = (isoStr?: string) => {
+    if (!isoStr) return '-'
+    const formattedIso = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : `${isoStr}Z`
+    const date = new Date(formattedIso)
+    if (isNaN(date.getTime())) return '-'
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+  }
+
+  const formatScanDate = (isoStr?: string) => {
+    if (!isoStr) return '-'
+    const formattedIso = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : `${isoStr}Z`
+    const date = new Date(formattedIso)
+    if (isNaN(date.getTime())) return '-'
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+  }
+
   const score = results?.score ?? null
   const accountLabel = connection?.account_id ? `AWS-${connection.account_id}` : 'AWS-DISCONNECTED'
 
@@ -143,7 +162,7 @@ export default function Dashboard() {
     { label: 'Attack Paths', icon: 'ti-route', value: results?.attack_paths?.length ?? '-', sub: results ? 'Total found' : 'Run a scan', subColor: 'var(--orange)' },
     { label: 'Graph Edges', icon: 'ti-arrows-split-2', value: results?.edge_count ?? '-', sub: results ? 'Relationships' : 'Run a scan', subColor: 'var(--blue)' },
     { label: 'Risk Score', icon: 'ti-gauge', value: score !== null ? `${score.toFixed(0)}` : '-', sub: score !== null ? (score >= 80 ? 'Low risk' : score >= 50 ? 'Medium risk' : 'High risk') : 'Run a scan', subColor: score !== null ? (score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--red)') : 'var(--text-dim)' },
-    { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : (results?.completed_at ? new Date(results.completed_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '-'), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
+    { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : formatScanTime(results?.completed_at || results?.started_at), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
   ]
 
   return (
@@ -170,7 +189,9 @@ export default function Dashboard() {
             <button className="icon-button" aria-label="Notifications">
               <i className="ti ti-bell" style={{ fontSize: 18 }} />
             </button>
+            <UserMenu />
           </div>
+
         </div>
 
         <div className="app-content">
@@ -217,8 +238,27 @@ export default function Dashboard() {
 
           <div className="panel" style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-              <div className="section-title">Recent Compliance Scans</div>
+              <div>
+                <div className="section-title">Recent Compliance Scans</div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>
+                  Click any scan below to view its security graph, attack paths, and risk score metrics
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {results?.scan_id && scanHistory.length > 0 && results.scan_id !== scanHistory[0]?.scan_id && (
+                  <button
+                    type="button"
+                    onClick={refreshData}
+                    style={{
+                      fontSize: 11, padding: '7px 12px', borderRadius: 8,
+                      border: '1px solid rgba(255, 153, 0, 0.4)', color: 'var(--orange)',
+                      background: 'rgba(255, 153, 0, 0.12)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600
+                    }}
+                  >
+                    <i className="ti ti-rotate-clockwise" style={{ fontSize: 12 }} />Reset to Latest
+                  </button>
+                )}
                 {csvNotice && (
                   <span style={{ fontSize: 11, color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <i className="ti ti-check" /> Exported CSV!
@@ -254,34 +294,59 @@ export default function Dashboard() {
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
-                  <tr>{['Scan ID', 'Target Environment', 'Status', 'Date', 'Resources', 'Score'].map(h => (
+                  <tr>{['Scan ID', 'Target Environment', 'Compliance Status', 'Date', 'Resources', 'Score'].map(h => (
                     <th key={h}>{h}</th>
                   ))}</tr>
                 </thead>
                 <tbody>
                   {scanHistory.length > 0
                     ? scanHistory.map(s => {
-                        const dateStr = s.completed_at
-                          ? new Date(s.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                          : (s.started_at ? new Date(s.started_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-')
+                        const dateStr = formatScanDate(s.completed_at || s.started_at)
                         const isComplete = s.status === 'complete'
                         const isRunning = s.status === 'running'
+                        const isCompliant = isComplete && (s.score === undefined || s.score >= 80)
+                        const isSelected = results?.scan_id === s.scan_id
+                        
                         return (
-                          <tr key={s.scan_id}>
-                            <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: 'var(--cyan)', padding: 10 }}>
-                              SCN-{s.scan_id.substring(0, 6)}
+                          <tr
+                            key={s.scan_id}
+                            onClick={() => selectScan(s.scan_id)}
+                            style={{
+                              cursor: 'pointer',
+                              background: isSelected ? 'rgba(255, 153, 0, 0.12)' : undefined,
+                              borderLeft: isSelected ? '3px solid var(--orange)' : '3px solid transparent',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: isSelected ? 'var(--orange)' : 'var(--cyan)', padding: 10, fontWeight: isSelected ? 700 : 400 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                SCN-{s.scan_id.substring(0, 6)}
+                                {isSelected && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--orange)', color: '#111827', letterSpacing: '0.04em' }}>
+                                    VIEWING
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>
                               {connection?.account_id ? `AWS Account (${connection.account_id})` : 'AWS Environment'}
                             </td>
                             <td style={{ padding: 10 }}>
                               <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999,
-                                background: isComplete ? 'rgba(122, 161, 22, .14)' : isRunning ? 'rgba(255, 153, 0, .14)' : 'rgba(209, 50, 18, .14)',
-                                color: isComplete ? 'var(--green)' : isRunning ? 'var(--orange)' : 'var(--red)',
+                                display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999, fontWeight: 600,
+                                background: isRunning
+                                  ? 'rgba(255, 153, 0, .14)'
+                                  : isCompliant
+                                  ? 'rgba(122, 161, 22, .14)'
+                                  : 'rgba(209, 50, 18, .14)',
+                                color: isRunning
+                                  ? 'var(--orange)'
+                                  : isCompliant
+                                  ? 'var(--green)'
+                                  : 'var(--red)',
                               }}>
-                                <i className={`ti ${isComplete ? 'ti-circle-check' : isRunning ? 'ti-loader' : 'ti-alert-circle'}`} style={{ fontSize: 11 }} />
-                                {s.status.toUpperCase()}
+                                <i className={`ti ${isRunning ? 'ti-loader' : isCompliant ? 'ti-shield-check' : 'ti-shield-x'}`} style={{ fontSize: 11 }} />
+                                {isRunning ? 'SCANNING' : isCompliant ? 'COMPLIANT' : 'NON-COMPLIANT'}
                               </span>
                             </td>
                             <td style={{ fontSize: 12, color: 'var(--text-muted)', padding: 10 }}>{dateStr}</td>
@@ -312,8 +377,10 @@ export default function Dashboard() {
               </table>
             </div>
           </div>
+
         </div>
       </div>
+
 
       <ScheduleScanModal
         isOpen={isScheduleModalOpen}

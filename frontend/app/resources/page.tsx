@@ -33,32 +33,21 @@ const TYPE_COLORS: Record<string,string> = {
 }
 
 export default function ResourcesPage() {
-  const { results } = useScan()
+  const { results, loaded } = useScan()
   const [nodes,   setNodes]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter,  setFilter]  = useState('ALL')
   const [search,  setSearch]  = useState('')
 
   useEffect(() => {
-    let cancelled = false
-    if (results?.graph_data?.nodes) {
-      setNodes(results.graph_data.nodes)
+    if (results) {
+      setNodes(results.graph_data?.nodes || [])
       setLoading(false)
-      return
-    }
-
-    requestJson('/dashboard/me').then((d: any) => {
-      if (cancelled) return
-      setNodes(d?.graph_data?.nodes || [])
+    } else if (loaded) {
       setLoading(false)
-    }).catch(() => {
-      if (!cancelled) setLoading(false)
-    })
-
-    return () => {
-      cancelled = true
     }
-  }, [results])
+  }, [results, loaded])
+
 
 
   const types   = ['ALL', ...Array.from(new Set(nodes.map((n:any) => n.type))).filter(t => t !== 'pseudo:internet')]
