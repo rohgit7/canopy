@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 import { Shield, CheckCircle, AlertCircle, Copy } from 'lucide-react'
+import { buildApiUrl } from '@/lib/api'
 
-const API        = process.env.NEXT_PUBLIC_API_URL
 const ACCOUNT_ID = process.env.NEXT_PUBLIC_CANOPY_ACCOUNT_ID || 'YOUR_ACCOUNT_ID'
 
 export default function Connect() {
@@ -18,7 +18,7 @@ export default function Connect() {
     setStatus('verifying')
     try {
       const token = await getToken()
-      const res   = await fetch(`${API}/connect`, {
+      const res   = await fetch(buildApiUrl('/connect'), {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',

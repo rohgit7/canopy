@@ -15,6 +15,20 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 log = logging.getLogger(__name__)
 
+# ── DB ────────────────────────────────────────────────────────────────────────
+from ..db.connection import ping
+from ..db.users      import upsert_user
+from ..db.connections import save_connection, get_role_arn
+from ..db.scans      import (
+    create_scan,
+    update_resource_count,
+    complete_scan,
+    fail_scan,
+    get_scan,
+    get_latest_complete_scan,
+    get_scan_history,
+)
+
 from ..extractor.orchestrator import extract_all
 from ..extractor.policies      import PolicyDocExtractor
 from ..graph.builder           import build_graph
@@ -22,8 +36,7 @@ from ..engine.attack_paths     import AttackPathEngine
 from ..engine.blast_radius     import BlastRadiusCalculator
 from ..ai.narrator             import narrate_path
 
-_scans:       dict = {}
-_connections: dict = {}
+
 
 app = FastAPI(title="Canopy API", version="2.0.0")
 app.add_middleware(
@@ -49,7 +62,9 @@ class ScanRequest(BaseModel):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "2.0.0"}
+    db_ok = ping()
+    
+    return {"status": "ok" if db_ok else "degraded", "version": "2.0.0", "database": "connected" if db_ok else "unreachable",}
 
 
 @app.post("/connect")
@@ -67,10 +82,10 @@ async def connect_account(req: ConnectRequest):
             aws_secret_access_key = creds["SecretAccessKey"],
             aws_session_token     = creds["SessionToken"],
         )
-        identity   = test_session.client("sts").get_caller_identity()
-        account_id = identity["Account"]
+        account_id = test_session.client("sts").get_caller_identity()["Account"]
 
-        _connections[req.customer_id] = req.role_arn
+        upsert_user(req.customer_id)
+        save_connection(req.customer_id, req.role_arn, account_id)
         return {
             "status":     "connected",
             "account_id": account_id,
@@ -82,36 +97,42 @@ async def connect_account(req: ConnectRequest):
 
 @app.post("/scan")
 async def start_scan(req: ScanRequest, bg: BackgroundTasks):
-    role_arn = _connections.get(req.customer_id)
+    upsert_user(req.customer_id)
+    
+    role_arn = get_role_arn(req.customer_id)
     scan_id  = str(uuid.uuid4())[:8]
 
-    _scans[scan_id] = {
-        "status":      "running",
-        "customer_id": req.customer_id,
-        "started_at":  datetime.utcnow().isoformat(),
-    }
+    create_scan(scan_id, req.customer_id)
 
     bg.add_task(_run_scan, scan_id, role_arn, req.customer_id)
     return {"scan_id": scan_id, "status": "running"}
 
 
 @app.get("/scan/{scan_id}")
-async def get_scan(scan_id: str):
-    if scan_id not in _scans:
+async def get_scan_result(scan_id: str):
+    doc = get_scan(scan_id)
+    if not doc:
         raise HTTPException(404, "Scan not found")
-    return _scans[scan_id]
+
+    # Convert datetime objects to strings for JSON
+    return _serialise(doc)
+
+
+def _get_latest_scan_id(customer_id: str):
+    return _latest_scans_by_customer.get(customer_id)
 
 
 @app.get("/dashboard/{customer_id}")
 async def get_dashboard(customer_id: str):
-    completed = [
-        s for s in _scans.values()
-        if s.get("customer_id") == customer_id
-        and s.get("status") == "complete"
-    ]
-    if not completed:
+    doc = get_latest_complete_scan(customer_id)
+    if not doc:
         return {"status": "no_scan", "message": "Run a scan first"}
-    return completed[-1]
+    return _serialise(doc)
+
+@app.get("/scans/{customer_id}")
+async def list_scans(customer_id: str):
+    history = get_scan_history(customer_id)
+    return [_serialise(s) for s in history]
 
 
 async def _run_scan(scan_id: str, role_arn: str, customer_id: str):
@@ -121,49 +142,57 @@ async def _run_scan(scan_id: str, role_arn: str, customer_id: str):
         resources = await asyncio.get_event_loop().run_in_executor(
             None, extract_all, role_arn
         )
-        _scans[scan_id]["resource_count"] = len(resources)
+        update_resource_count(scan_id, len(resources))
+        log.info(f"[{scan_id}] {len(resources)} resources extracted")
 
         session  = _get_session(role_arn) if role_arn else boto3.Session()
-        pol_arns = []
-        for r in resources:
-            pol_arns.extend(r.metadata.get("attached_policies", []))
+        pol_arns = list(set(
+            arn
+            for r in resources
+            for arn in r.metadata.get("attached_policies", [])
+        ))
 
-        policies = PolicyDocExtractor(session).extract_docs(list(set(pol_arns)))
+        policies = PolicyDocExtractor(session).extract_docs(pol_arns)
 
         graph   = build_graph(customer_id, resources, policies)
+        log.info(
+            f"[{scan_id}] Graph: {graph.G.number_of_nodes()} nodes "
+            f"{graph.G.number_of_edges()} edges"
+        )
         paths   = AttackPathEngine(graph).find_all()
+        log.info(f"[{scan_id}] {len(paths)} attack paths")
         blast_c = BlastRadiusCalculator(graph)
 
-        for path in paths:
-            path.blast_radius = blast_c.calculate(path.target_id).score
+        for p in paths:
+            p.blast_radius = blast.calculate(p.target_id).score
 
-        for path in [p for p in paths if p.exploitability == "CRITICAL"][:3]:
+        # 6. AI narration
+        for p in [x for x in paths if x.exploitability == "CRITICAL"][:3]:
             try:
-                path.ai_narrative = narrate_path(path)
+                p.ai_narrative = narrate_path(p)
             except Exception as e:
-                log.warning(f"Narration failed: {e}")
+                log.warning(f"[{scan_id}] Narration failed: {e}")
 
         deductions = {"CRITICAL": 25, "HIGH": 15, "MEDIUM": 8, "LOW": 3}
         score      = max(0.0, 100.0 - sum(
             deductions.get(p.exploitability, 0) for p in paths
         ))
 
-        _scans[scan_id].update({
-            "status":         "complete",
-            "score":          round(score, 1),
-            "resource_count": len(resources),
-            "node_count":     graph.G.number_of_nodes(),
-            "edge_count":     graph.G.number_of_edges(),
-            "attack_paths":   [p.to_dict() for p in paths],
-            "graph_data":     _to_d3(graph),
-            "completed_at":   datetime.utcnow().isoformat(),
-        })
-
-        log.info(f"[{scan_id}] Done — score={score:.1f}, paths={len(paths)}")
+        complete_scan(
+            scan_id        = scan_id,
+            score          = score,
+            resource_count = len(resources),
+            node_count     = graph.G.number_of_nodes(),
+            edge_count     = graph.G.number_of_edges(),
+            attack_paths   = [p.to_dict() for p in paths],
+            graph_data     = _to_d3(graph),
+        )
+        log.info(f"[{scan_id}] Done — score={score:.1f}")
 
     except Exception as e:
         log.exception(f"[{scan_id}] Failed: {e}")
-        _scans[scan_id].update({"status": "failed", "error": str(e)})
+        fail_scan(scan_id, str(e))
+
 
 
 def _get_session(role_arn: str):
@@ -182,12 +211,13 @@ def _get_session(role_arn: str):
 def _to_d3(graph) -> dict:
     nodes = [
         {
-            "id":             nid,
-            "name":           d.get("name", nid),
-            "type":           d.get("resource_type", "unknown"),
+            "id":              nid,
+            "name":            d.get("name", nid),
+            "type":            d.get("resource_type", "unknown"),
             "internet_facing": d.get("internet_facing", False),
-            "is_sensitive":   d.get("is_sensitive", False),
-            "is_admin":       d.get("is_admin", False),
+            "is_sensitive":    d.get("is_sensitive", False),
+            "is_admin":        d.get("is_admin", False),
+            "region":          d.get("region", ""),
         }
         for nid, d in graph.G.nodes(data=True)
     ]
@@ -202,5 +232,19 @@ def _to_d3(graph) -> dict:
     ]
     return {"nodes": nodes, "links": links}
 
+def _serialise(doc: dict) -> dict:
+    """
+    Convert MongoDB document to JSON-serialisable dict.
+    MongoDB returns datetime objects — FastAPI cannot serialise those directly.
+    """
+    if not doc:
+        return doc
+    out = {}
+    for k, v in doc.items():
+        if isinstance(v, datetime):
+            out[k] = v.isoformat()
+        else:
+            out[k] = v
+    return out
 
 handler = Mangum(app)

@@ -1,18 +1,26 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { requestJson } from '@/lib/api'
 
 export default function BlastRadiusPage() {
   const [paths,   setPaths]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${API}/dashboard/me`)
-      .then(r => r.json())
-      .then(d => { setPaths(d.attack_paths || []); setLoading(false) })
-      .catch(() => setLoading(false))
+    let cancelled = false
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      setPaths(d?.attack_paths || [])
+      setLoading(false)
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const sorted = [...paths].sort((a, b) => (b.blast_radius||0) - (a.blast_radius||0))

@@ -5,8 +5,7 @@ import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
 import { Sidebar } from '@/components/Sidebar'
 import { useScan } from '@/context/ScanContext'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { buildApiUrl } from '@/lib/api'
 
 export default function Dashboard() {
   const { getToken } = useAuth()
@@ -21,7 +20,7 @@ export default function Dashboard() {
     setProgress('Connecting to your AWS account...')
     try {
       const token = await getToken()
-      const r = await fetch(`${API}/scan`, {
+      const r = await fetch(buildApiUrl('/scan'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ customer_id: 'me' }),
@@ -50,7 +49,7 @@ export default function Dashboard() {
     const msgInt = setInterval(() => setProgress(msgs[idx++ % msgs.length]), 8000)
     const pollInt = setInterval(async () => {
       try {
-        const r = await fetch(`${API}/scan/${scanId}`)
+        const r = await fetch(buildApiUrl(`/scan/${scanId}`))
         const data = await r.json()
         if (data.status === 'complete') {
           setResults(data)

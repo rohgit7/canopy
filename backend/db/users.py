@@ -1,23 +1,34 @@
 import logging
 from datetime import datetime
-from .database import db
+from .connection import get_db
 
 log = logging.getLogger(__name__)
 
 
-def upsert_user(user_id: str, email: str = None):
-    """Create user if not exists, update last_login if exists."""
-    with db() as cursor:
-        cursor.execute("""
-            INSERT INTO users (id, email, created_at, last_login)
-            VALUES (%s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                last_login = VALUES(last_login),
-                email      = COALESCE(VALUES(email), email)
-        """, (user_id, email, datetime.utcnow(), datetime.utcnow()))
+def upsert_user(user_id: str, email: str = ""):
+    """
+    Insert the user document if it does not exist.
+    Update last_seen and email if it does.
+    upsert=True means: insert if no match, update if match found.
+    """
+    db = get_db()
+    db.users.update_one(
+        filter = {"user_id": user_id},
+        update = {
+            "$set": {
+                "last_seen": datetime.utcnow(),
+                **({"email": email} if email else {}),
+            },
+            "$setOnInsert": {
+                "user_id":    user_id,
+                "created_at": datetime.utcnow(),
+            },
+        },
+        upsert = True,
+    )
 
 
 def get_user(user_id: str) -> dict | None:
-    with db() as cursor:
-        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-        return cursor.fetchone()
+    db  = get_db()
+    doc = db.users.find_one({"user_id": user_id}, {"_id": 0})
+    return doc

@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react'
 import { PageLayout }    from '@/components/PageLayout'
 import { AttackPathCard } from '@/components/AttackPathCard'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { requestJson } from '@/lib/api'
 
 export default function AttackPathsPage() {
   const [paths,  setPaths]  = useState<any[]>([])
@@ -11,10 +10,19 @@ export default function AttackPathsPage() {
   const [filter, setFilter] = useState<string>('ALL')
 
   useEffect(() => {
-    fetch(`${API}/dashboard/me`)
-      .then(r => r.json())
-      .then(d => { setPaths(d.attack_paths || []); setLoading(false) })
-      .catch(() => setLoading(false))
+    let cancelled = false
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      setPaths(d?.attack_paths || [])
+      setLoading(false)
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const FILTERS = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']

@@ -2,8 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { PageLayout } from '@/components/PageLayout'
 import cytoscape from 'cytoscape'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { requestJson } from '@/lib/api'
 
 // ── Colour + metadata maps ────────────────────────────────────────────────────
 const NODE_TYPES: Record<string, { color: string; border: string; icon: string; label: string; desc: string }> = {
@@ -118,22 +117,28 @@ export default function ResourceGraphPage() {
 
   // Fetch data
   useEffect(() => {
-    fetch(`${API}/dashboard/me`)
-      .then(r => r.json())
-      .then(d => {
-        setGraphData(d.graph_data || null)
-        setPaths(d.attack_paths || [])
-        const nodes = d.graph_data?.nodes || []
-        setStats({
-          nodes:     nodes.length,
-          edges:     d.graph_data?.links?.length || 0,
-          internet:  nodes.filter((n: any) => n.internet_facing).length,
-          sensitive: nodes.filter((n: any) => n.is_sensitive).length,
-          admin:     nodes.filter((n: any) => n.is_admin).length,
-        })
-        setLoading(false)
+    let cancelled = false
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      setGraphData(d?.graph_data || null)
+      setPaths(d?.attack_paths || [])
+      const nodes = d?.graph_data?.nodes || []
+      setStats({
+        nodes:     nodes.length,
+        edges:     d?.graph_data?.links?.length || 0,
+        internet:  nodes.filter((n: any) => n.internet_facing).length,
+        sensitive: nodes.filter((n: any) => n.is_sensitive).length,
+        admin:     nodes.filter((n: any) => n.is_admin).length,
       })
-      .catch(() => setLoading(false))
+      setLoading(false)
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Build Cytoscape

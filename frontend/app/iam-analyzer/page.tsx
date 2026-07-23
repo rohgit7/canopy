@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { requestJson } from '@/lib/api'
 
 export default function IAMAnalyzerPage() {
   const [nodes,   setNodes]   = useState<any[]>([])
@@ -10,14 +9,20 @@ export default function IAMAnalyzerPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${API}/dashboard/me`)
-      .then(r => r.json())
-      .then(d => {
-        setNodes(d.graph_data?.nodes || [])
-        setEdges(d.graph_data?.links || [])
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    let cancelled = false
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      setNodes(d?.graph_data?.nodes || [])
+      setEdges(d?.graph_data?.links || [])
+      setLoading(false)
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const roles  = nodes.filter((n:any) => n.type === 'iam:role')

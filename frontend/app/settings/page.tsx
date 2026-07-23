@@ -2,8 +2,7 @@
 import { useState } from 'react'
 import { useAuth, UserButton } from '@clerk/nextjs'
 import { PageLayout } from '@/components/PageLayout'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { buildApiUrl } from '@/lib/api'
 
 export default function SettingsPage() {
   const { userId } = useAuth()
@@ -19,7 +18,7 @@ export default function SettingsPage() {
     if (!roleArn) return
     setTesting(true); setTestMsg(null)
     try {
-      const r    = await fetch(`${API}/connect`, {
+      const r    = await fetch(buildApiUrl('/connect'), {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ role_arn: roleArn, customer_id: 'me' }),
       })

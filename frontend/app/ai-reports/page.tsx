@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { requestJson } from '@/lib/api'
 
 function tryParse(s: string) {
   try { return JSON.parse(s) } catch { return null }
@@ -14,14 +13,20 @@ export default function AIReportsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${API}/dashboard/me`)
-      .then(r => r.json())
-      .then(d => {
-        setPaths(d.attack_paths || [])
-        setScore(d.score ?? null)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    let cancelled = false
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      setPaths(d?.attack_paths || [])
+      setScore(d?.score ?? null)
+      setLoading(false)
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const narrated = paths.filter(p => p.ai_narrative)

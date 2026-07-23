@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
-
-const API = process.env.NEXT_PUBLIC_API_URL
+import { requestJson } from '@/lib/api'
 
 const TYPE_LABELS: Record<string,string> = {
   'ec2:instance':       'EC2 Instance',
@@ -39,10 +38,19 @@ export default function ResourcesPage() {
   const [search,  setSearch]  = useState('')
 
   useEffect(() => {
-    fetch(`${API}/dashboard/me`)
-      .then(r => r.json())
-      .then(d => { setNodes(d.graph_data?.nodes || []); setLoading(false) })
-      .catch(() => setLoading(false))
+    let cancelled = false
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      setNodes(d?.graph_data?.nodes || [])
+      setLoading(false)
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const types   = ['ALL', ...Array.from(new Set(nodes.map((n:any) => n.type))).filter(t => t !== 'pseudo:internet')]

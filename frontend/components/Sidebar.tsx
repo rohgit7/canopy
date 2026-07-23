@@ -1,4 +1,5 @@
 'use client'
+import { useClerk } from '@clerk/nextjs'
 import { usePathname, useRouter } from 'next/navigation'
 
 const NAV_ITEMS = [
@@ -19,6 +20,11 @@ export function Sidebar({ onScan, scanning }: {
 }) {
   const pathname = usePathname()
   const router   = useRouter()
+  const { signOut } = useClerk()
+
+  const handleLogout = async () => {
+    await signOut({ redirectUrl: '/' })
+  }
 
   return (
     <aside className="sidebar">
@@ -61,14 +67,21 @@ export function Sidebar({ onScan, scanning }: {
       )}
 
       <div className="sidebar-footer">
-        {[['ti-file-description', 'Docs'], ['ti-logout', 'Logout']].map(([icon, label]) => (
-          <div
-            key={label}
-            className="sidebar-footer-link"
-          >
-            <i className={`ti ${icon}`} style={{ fontSize: 14 }} />{label}
-          </div>
-        ))}
+        <div
+          onClick={() => router.push('/docs')}
+          className="sidebar-footer-link"
+          style={{ cursor: 'pointer' }}
+        >
+          <i className="ti ti-file-description" style={{ fontSize: 14 }} />Docs
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="sidebar-footer-link"
+          style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+        >
+          <i className="ti ti-logout" style={{ fontSize: 14 }} />Logout
+        </button>
       </div>
     </aside>
   )
