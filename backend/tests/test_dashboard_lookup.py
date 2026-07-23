@@ -1,17 +1,19 @@
-from backend.api.main import _get_latest_scan_id
+import asyncio
+from unittest.mock import patch
+from backend.api.main import get_dashboard
+
+@patch("backend.api.main.get_latest_complete_scan")
+def test_get_dashboard_returns_latest_scan(mock_get_scan):
+    mock_get_scan.return_value = {
+        "scan_id": "scan-123",
+        "user_id": "me",
+        "status": "complete",
+        "score": 92.5
+    }
+
+    res = asyncio.run(get_dashboard("me"))
+    assert res["scan_id"] == "scan-123"
+    assert res["status"] == "complete"
 
 
-def test_get_latest_scan_id_returns_latest_completed_scan_for_customer():
-    from backend.api.main import _scans, _latest_scans_by_customer
 
-    _scans.clear()
-    _latest_scans_by_customer.clear()
-
-    _scans['scan-1'] = {'customer_id': 'me', 'status': 'complete'}
-    _scans['scan-2'] = {'customer_id': 'me', 'status': 'complete'}
-    _scans['scan-3'] = {'customer_id': 'other', 'status': 'complete'}
-
-    _latest_scans_by_customer['me'] = 'scan-2'
-    _latest_scans_by_customer['other'] = 'scan-3'
-
-    assert _get_latest_scan_id('me') == 'scan-2'

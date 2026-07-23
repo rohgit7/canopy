@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 import { Shield, CheckCircle, AlertCircle, Copy } from 'lucide-react'
 import { buildApiUrl } from '@/lib/api'
+import { useScan } from '@/context/ScanContext'
 
 const ACCOUNT_ID = process.env.NEXT_PUBLIC_CANOPY_ACCOUNT_ID || 'YOUR_ACCOUNT_ID'
 
@@ -12,6 +13,7 @@ export default function Connect() {
   const [status,  setStatus]  = useState<'idle'|'verifying'|'ok'|'error'>('idle')
   const [msg,     setMsg]     = useState('')
   const { getToken }          = useAuth()
+  const { refreshData }       = useScan()
   const router                = useRouter()
 
   const verify = async () => {
@@ -34,7 +36,9 @@ export default function Connect() {
       }
       setStatus('ok')
       setMsg(`Connected to account ${data.account_id}`)
+      await refreshData()
       setTimeout(() => router.push('/dashboard'), 1500)
+
     } catch {
       setStatus('error')
       setMsg('Cannot reach API. Is the backend running?')

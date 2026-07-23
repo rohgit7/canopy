@@ -2,6 +2,7 @@
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useState } from 'react'
 import { Sidebar } from './Sidebar'
+import { useScan } from '@/context/ScanContext'
 
 export function PageLayout({
   children,
@@ -18,10 +19,12 @@ export function PageLayout({
 }) {
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
+  const { connection } = useScan()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const displayName = user?.fullName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'User'
-  const arn = typeof window !== 'undefined' ? window.localStorage.getItem('canopy_role_arn') : null
+  const arn = connection?.role_arn || (typeof window !== 'undefined' ? window.localStorage.getItem('canopy_role_arn') : null)
+  const accountLabel = connection?.account_id ? `AWS-${connection.account_id}` : 'AWS-DISCONNECTED'
 
   return (
     <div className="app-shell">
@@ -30,7 +33,7 @@ export function PageLayout({
 
         <div className="app-topbar">
           <div className="pill">
-            <i className="ti ti-server" style={{ fontSize: 14 }} />AWS-PROD-AP-SOUTH-1
+            <i className="ti ti-server" style={{ fontSize: 14 }} />{accountLabel}
             <i className="ti ti-chevron-down" style={{ fontSize: 13 }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -61,8 +64,9 @@ export function PageLayout({
                   <div style={{ padding: 14, borderBottom: '1px solid #112233', display: 'grid', gap: 8 }}>
                     <div style={{ fontSize: 12, color: '#7f93a5' }}>Connected account</div>
                     <div style={{ fontSize: 12, color: '#dce7ef', wordBreak: 'break-all' }}>{arn || 'No AWS role ARN connected yet'}</div>
-                    <div style={{ fontSize: 12, color: '#7f93a5' }}>Status: {arn ? 'Connected' : 'Not connected'}</div>
+                    <div style={{ fontSize: 12, color: '#7f93a5' }}>Status: {connection?.account_id || arn ? 'Connected' : 'Not connected'}</div>
                   </div>
+
 
                   <div style={{ padding: 10, display: 'grid', gap: 8 }}>
                     <button type="button" style={{ background: 'transparent', border: 'none', color: '#dce7ef', textAlign: 'left', padding: 6, cursor: 'pointer', borderRadius: 6 }} onClick={() => setMenuOpen(false)}>

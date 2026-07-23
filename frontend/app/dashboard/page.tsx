@@ -1,17 +1,76 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
 import { Sidebar } from '@/components/Sidebar'
+import { ScheduleScanModal } from '@/components/ScheduleScanModal'
 import { useScan } from '@/context/ScanContext'
-import { buildApiUrl } from '@/lib/api'
+import { buildApiUrl, getScanHistory, ScanResult } from '@/lib/api'
 
 export default function Dashboard() {
   const { getToken } = useAuth()
-  const { scanId, setScanId, scanning, setScanning, results, setResults } = useScan()
+  const { scanId, setScanId, scanning, setScanning, results, setResults, connection, refreshData } = useScan()
   const [progress, setProgress] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [scanHistory, setScanHistory] = useState<ScanResult[]>([])
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+  const [csvNotice, setCsvNotice] = useState(false)
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const history = await getScanHistory('me')
+      if (history && Array.isArray(history)) {
+        setScanHistory(history)
+      }
+    } catch {
+      // Ignore load error
+    }
+  }, [])
+
+  const exportCsv = () => {
+    const records = scanHistory.length > 0 ? scanHistory : (results ? [results] : [])
+    if (records.length === 0) {
+      alert('No scan data available to export.')
+      return
+    }
+
+    const headers = ['Scan ID', 'Target Environment', 'Status', 'Date', 'Resource Count', 'Node Count', 'Risk Score']
+    const rows = records.map(s => {
+      const dateStr = s.completed_at
+        ? new Date(s.completed_at).toISOString()
+        : (s.started_at ? new Date(s.started_at).toISOString() : '')
+      const targetEnv = connection?.account_id ? `AWS Account (${connection.account_id})` : 'AWS Environment'
+      return [
+        `SCN-${s.scan_id}`,
+        `"${targetEnv}"`,
+        s.status,
+        `"${dateStr}"`,
+        s.resource_count ?? 0,
+        s.node_count ?? 0,
+        s.score !== undefined ? s.score.toFixed(1) : ''
+      ].join(',')
+    })
+
+    const csvContent = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `canopy_compliance_scans_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    setCsvNotice(true)
+    setTimeout(() => setCsvNotice(false), 3000)
+  }
+
+
+  useEffect(() => {
+    loadHistory()
+  }, [results, scanning, loadHistory])
 
   const scan = async () => {
     setScanning(true)
@@ -56,11 +115,14 @@ export default function Dashboard() {
           setScanning(false)
           clearInterval(msgInt)
           clearInterval(pollInt)
+          refreshData()
+          loadHistory()
         } else if (data.status === 'failed') {
           setError(data.error || 'Scan failed')
           setScanning(false)
           clearInterval(msgInt)
           clearInterval(pollInt)
+          loadHistory()
         }
       } catch {
         // Keep polling while the backend finishes a long-running scan.
@@ -70,9 +132,10 @@ export default function Dashboard() {
       clearInterval(msgInt)
       clearInterval(pollInt)
     }
-  }, [scanId, scanning])
+  }, [scanId, scanning, setResults, setScanning, refreshData, loadHistory])
 
   const score = results?.score ?? null
+  const accountLabel = connection?.account_id ? `AWS-${connection.account_id}` : 'AWS-DISCONNECTED'
 
   const statCards = [
     { label: 'AWS Resources', icon: 'ti-server', value: results?.resource_count ?? '-', sub: results ? `${results.node_count} nodes` : 'Run a scan', subColor: 'var(--green)' },
@@ -83,14 +146,13 @@ export default function Dashboard() {
     { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : (results?.completed_at ? new Date(results.completed_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '-'), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
   ]
 
-
   return (
     <div className="app-shell">
       <Sidebar onScan={scan} scanning={scanning} />
       <div className="app-main">
         <div className="app-topbar">
           <div className="pill" style={{ cursor: 'pointer' }}>
-            <i className="ti ti-server" style={{ fontSize: 14 }} />AWS-PROD-AP-SOUTH-1
+            <i className="ti ti-server" style={{ fontSize: 14 }} />{accountLabel}
             <i className="ti ti-chevron-down" style={{ fontSize: 13 }} />
           </div>
 
@@ -156,54 +218,95 @@ export default function Dashboard() {
           <div className="panel" style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
               <div className="section-title">Recent Compliance Scans</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[
-                  ['ti-download', 'Export CSV', false],
-                  ['ti-calendar', 'Schedule Scan', true],
-                ].map(([icon, label, primary]) => (
-                  <button key={label as string} style={{ fontSize: 11, padding: '7px 12px', borderRadius: 8, border: `1px solid ${primary ? 'rgba(255, 153, 0, .35)' : 'var(--border)'}`, color: primary ? '#111827' : 'var(--text-muted)', background: primary ? 'linear-gradient(135deg, #ff9900, #ec7211)' : 'rgba(35, 47, 62, .6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontWeight: primary ? 700 : 500 }}>
-                    <i className={`ti ${icon}`} style={{ fontSize: 12 }} />{label}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {csvNotice && (
+                  <span style={{ fontSize: 11, color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <i className="ti ti-check" /> Exported CSV!
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={exportCsv}
+                  style={{
+                    fontSize: 11, padding: '7px 12px', borderRadius: 8,
+                    border: '1px solid var(--border)', color: 'var(--text-muted)',
+                    background: 'rgba(35, 47, 62, .6)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, fontWeight: 500
+                  }}
+                >
+                  <i className="ti ti-download" style={{ fontSize: 12 }} />Export CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsScheduleModalOpen(true)}
+                  style={{
+                    fontSize: 11, padding: '7px 12px', borderRadius: 8,
+                    border: '1px solid rgba(255, 153, 0, .35)', color: '#111827',
+                    background: 'linear-gradient(135deg, #ff9900, #ec7211)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700
+                  }}
+                >
+                  <i className="ti ti-calendar" style={{ fontSize: 12 }} />Schedule Scan
+                </button>
               </div>
             </div>
+
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
-                  <tr>{['Scan ID', 'Target Environment', 'Status', 'Completed', 'Findings', 'Action'].map(h => (
+                  <tr>{['Scan ID', 'Target Environment', 'Status', 'Date', 'Resources', 'Score'].map(h => (
                     <th key={h}>{h}</th>
                   ))}</tr>
                 </thead>
                 <tbody>
-                  {results
-                    ? <tr>
-                        <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: 'var(--cyan)', padding: 10 }}>SCN-{Math.floor(Math.random() * 9000 + 1000)}</td>
-                        <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>Production - AP South</td>
-                        <td style={{ padding: 10 }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999, background: 'rgba(122, 161, 22, .14)', color: 'var(--green)' }}><i className="ti ti-circle-check" style={{ fontSize: 11 }} />Completed</span></td>
-                        <td style={{ fontSize: 12, color: 'var(--text-muted)', padding: 10 }}>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                        <td style={{ padding: 10 }}>
-                          <div style={{ display: 'flex', gap: 4 }}>
-                            {[
-                              ['CRIT', results.attack_paths?.filter((p: any) => p.exploitability === 'CRITICAL').length ?? 0, 'rgba(209, 50, 18, .14)', 'var(--red)'],
-                              ['HIGH', results.attack_paths?.filter((p: any) => p.exploitability === 'HIGH').length ?? 0, 'rgba(255, 153, 0, .14)', 'var(--orange)'],
-                              ['MED', results.attack_paths?.filter((p: any) => p.exploitability === 'MEDIUM').length ?? 0, 'rgba(20, 110, 180, .16)', 'var(--blue)'],
-                            ].map(([l, v, bg, col]) => (
-                              <span key={l as string} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, fontWeight: 650, background: bg as string, color: col as string }}>{l}: {v}</span>
-                            ))}
-                          </div>
+                  {scanHistory.length > 0
+                    ? scanHistory.map(s => {
+                        const dateStr = s.completed_at
+                          ? new Date(s.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                          : (s.started_at ? new Date(s.started_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-')
+                        const isComplete = s.status === 'complete'
+                        const isRunning = s.status === 'running'
+                        return (
+                          <tr key={s.scan_id}>
+                            <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: 'var(--cyan)', padding: 10 }}>
+                              SCN-{s.scan_id.substring(0, 6)}
+                            </td>
+                            <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>
+                              {connection?.account_id ? `AWS Account (${connection.account_id})` : 'AWS Environment'}
+                            </td>
+                            <td style={{ padding: 10 }}>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999,
+                                background: isComplete ? 'rgba(122, 161, 22, .14)' : isRunning ? 'rgba(255, 153, 0, .14)' : 'rgba(209, 50, 18, .14)',
+                                color: isComplete ? 'var(--green)' : isRunning ? 'var(--orange)' : 'var(--red)',
+                              }}>
+                                <i className={`ti ${isComplete ? 'ti-circle-check' : isRunning ? 'ti-loader' : 'ti-alert-circle'}`} style={{ fontSize: 11 }} />
+                                {s.status.toUpperCase()}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: 12, color: 'var(--text-muted)', padding: 10 }}>{dateStr}</td>
+                            <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>
+                              {s.resource_count ?? '-'} resources ({s.node_count ?? 0} nodes)
+                            </td>
+                            <td style={{ padding: 10 }}>
+                              {s.score !== undefined ? (
+                                <span style={{
+                                  fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+                                  background: s.score >= 80 ? 'rgba(122, 161, 22, .14)' : s.score >= 50 ? 'rgba(255, 153, 0, .14)' : 'rgba(209, 50, 18, .14)',
+                                  color: s.score >= 80 ? 'var(--green)' : s.score >= 50 ? 'var(--orange)' : 'var(--red)',
+                                }}>
+                                  {s.score.toFixed(0)}/100
+                                </span>
+                              ) : '-'}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    : <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: 24, fontSize: 12 }}>
+                          No scan history found in database. Click "START SCAN" to run your first scan.
                         </td>
-                        <td style={{ padding: 10 }}><i className="ti ti-eye" style={{ fontSize: 16, color: 'var(--text-muted)', cursor: 'pointer' }} /></td>
                       </tr>
-                    : [['SCN-4421', 'Production Cluster', 'Oct 24, 2023', '12', '43', '88'], ['SCN-4420', 'Staging Environment', 'Oct 23, 2023', '3', '17', '42']].map(row => (
-                        <tr key={row[0]}>
-                          <td style={{ fontSize: 10, fontFamily: 'var(--font-geist-mono)', color: 'var(--cyan)', padding: 10 }}>{row[0]}</td>
-                          <td style={{ fontSize: 12, color: 'var(--text)', padding: 10 }}>{row[1]}</td>
-                          <td style={{ padding: 10 }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '3px 9px', borderRadius: 999, background: 'rgba(122, 161, 22, .14)', color: 'var(--green)' }}><i className="ti ti-circle-check" style={{ fontSize: 11 }} />Completed</span></td>
-                          <td style={{ fontSize: 12, color: 'var(--text-muted)', padding: 10 }}>{row[2]}</td>
-                          <td style={{ padding: 10 }}><div style={{ display: 'flex', gap: 4 }}><span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(209, 50, 18, .14)', color: 'var(--red)' }}>{row[3]}</span><span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(255, 153, 0, .14)', color: 'var(--orange)' }}>{row[4]}</span><span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(20, 110, 180, .16)', color: 'var(--blue)' }}>{row[5]}</span></div></td>
-                          <td style={{ padding: 10 }}><i className="ti ti-eye" style={{ fontSize: 16, color: 'var(--text-muted)', cursor: 'pointer' }} /></td>
-                        </tr>
-                      ))
                   }
                 </tbody>
               </table>
@@ -212,7 +315,15 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <ScheduleScanModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        accountId={connection?.account_id}
+      />
+
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
     </div>
   )
 }
+
+

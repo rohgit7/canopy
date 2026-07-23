@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
+import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 function tryParse(s: string) {
@@ -8,12 +9,19 @@ function tryParse(s: string) {
 }
 
 export default function AIReportsPage() {
+  const { results } = useScan()
   const [paths,   setPaths]   = useState<any[]>([])
   const [score,   setScore]   = useState<number|null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
+    if (results) {
+      setPaths(results.attack_paths || [])
+      setScore(results.score ?? null)
+      setLoading(false)
+      return
+    }
 
     requestJson('/dashboard/me').then((d: any) => {
       if (cancelled) return
@@ -27,7 +35,8 @@ export default function AIReportsPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [results])
+
 
   const narrated = paths.filter(p => p.ai_narrative)
 

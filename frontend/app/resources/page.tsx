@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
+import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 const TYPE_LABELS: Record<string,string> = {
@@ -32,6 +33,7 @@ const TYPE_COLORS: Record<string,string> = {
 }
 
 export default function ResourcesPage() {
+  const { results } = useScan()
   const [nodes,   setNodes]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter,  setFilter]  = useState('ALL')
@@ -39,6 +41,11 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     let cancelled = false
+    if (results?.graph_data?.nodes) {
+      setNodes(results.graph_data.nodes)
+      setLoading(false)
+      return
+    }
 
     requestJson('/dashboard/me').then((d: any) => {
       if (cancelled) return
@@ -51,7 +58,8 @@ export default function ResourcesPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [results])
+
 
   const types   = ['ALL', ...Array.from(new Set(nodes.map((n:any) => n.type))).filter(t => t !== 'pseudo:internet')]
   const visible = nodes

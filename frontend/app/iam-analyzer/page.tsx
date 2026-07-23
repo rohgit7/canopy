@@ -1,15 +1,23 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
+import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 export default function IAMAnalyzerPage() {
+  const { results } = useScan()
   const [nodes,   setNodes]   = useState<any[]>([])
   const [edges,   setEdges]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
+    if (results?.graph_data) {
+      setNodes(results.graph_data.nodes || [])
+      setEdges(results.graph_data.links || [])
+      setLoading(false)
+      return
+    }
 
     requestJson('/dashboard/me').then((d: any) => {
       if (cancelled) return
@@ -23,7 +31,8 @@ export default function IAMAnalyzerPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [results])
+
 
   const roles  = nodes.filter((n:any) => n.type === 'iam:role')
   const users  = nodes.filter((n:any) => n.type === 'iam:user')

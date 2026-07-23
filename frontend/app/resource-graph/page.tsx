@@ -1,6 +1,7 @@
 'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { PageLayout } from '@/components/PageLayout'
+import { useScan } from '@/context/ScanContext'
 import cytoscape from 'cytoscape'
 import { requestJson } from '@/lib/api'
 
@@ -104,6 +105,7 @@ function Tooltip({ x, y, data, onClose }: { x: number; y: number; data: any; onC
 export default function ResourceGraphPage() {
   const cyRef      = useRef<HTMLDivElement>(null)
   const cy         = useRef<any>(null)
+  const { results } = useScan()
   const [graphData, setGraphData]   = useState<any>(null)
   const [paths,     setPaths]       = useState<any[]>([])
   const [loading,   setLoading]     = useState(true)
@@ -119,8 +121,7 @@ export default function ResourceGraphPage() {
   useEffect(() => {
     let cancelled = false
 
-    requestJson('/dashboard/me').then((d: any) => {
-      if (cancelled) return
+    const populate = (d: any) => {
       setGraphData(d?.graph_data || null)
       setPaths(d?.attack_paths || [])
       const nodes = d?.graph_data?.nodes || []
@@ -132,6 +133,16 @@ export default function ResourceGraphPage() {
         admin:     nodes.filter((n: any) => n.is_admin).length,
       })
       setLoading(false)
+    }
+
+    if (results?.graph_data) {
+      populate(results)
+      return
+    }
+
+    requestJson('/dashboard/me').then((d: any) => {
+      if (cancelled) return
+      populate(d)
     }).catch(() => {
       if (!cancelled) setLoading(false)
     })
@@ -139,7 +150,8 @@ export default function ResourceGraphPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [results])
+
 
   // Build Cytoscape
   useEffect(() => {

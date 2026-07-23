@@ -1,16 +1,24 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth, UserButton } from '@clerk/nextjs'
 import { PageLayout } from '@/components/PageLayout'
 import { buildApiUrl } from '@/lib/api'
+import { useScan } from '@/context/ScanContext'
 
 export default function SettingsPage() {
   const { userId } = useAuth()
+  const { connection, refreshData } = useScan()
   const [roleArn,  setRoleArn]  = useState('')
   const [region,   setRegion]   = useState('ap-south-1')
   const [saved,    setSaved]    = useState(false)
   const [testing,  setTesting]  = useState(false)
   const [testMsg,  setTestMsg]  = useState<{ok:boolean,msg:string}|null>(null)
+
+  useEffect(() => {
+    if (connection?.role_arn) {
+      setRoleArn(connection.role_arn)
+    }
+  }, [connection])
 
   const REGIONS = ['ap-south-1','us-east-1','us-west-2','eu-west-1','ap-southeast-1','eu-central-1']
 
@@ -23,15 +31,18 @@ export default function SettingsPage() {
         body: JSON.stringify({ role_arn: roleArn, customer_id: 'me' }),
       })
       const data = await r.json()
-      setTestMsg(r.ok
-        ? { ok: true,  msg: `Connected to account ${data.account_id}` }
-        : { ok: false, msg: data.detail || 'Connection failed' }
-      )
+      if (r.ok) {
+        setTestMsg({ ok: true,  msg: `Connected to account ${data.account_id}` })
+        refreshData()
+      } else {
+        setTestMsg({ ok: false, msg: data.detail || 'Connection failed' })
+      }
     } catch {
       setTestMsg({ ok: false, msg: 'Cannot reach API' })
     }
     setTesting(false)
   }
+
 
   const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
     <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 20, marginBottom: 14 }}>

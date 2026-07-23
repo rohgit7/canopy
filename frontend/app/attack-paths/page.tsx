@@ -2,15 +2,22 @@
 import { useEffect, useState } from 'react'
 import { PageLayout }    from '@/components/PageLayout'
 import { AttackPathCard } from '@/components/AttackPathCard'
+import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 export default function AttackPathsPage() {
+  const { results } = useScan()
   const [paths,  setPaths]  = useState<any[]>([])
   const [loading,setLoading]= useState(true)
   const [filter, setFilter] = useState<string>('ALL')
 
   useEffect(() => {
     let cancelled = false
+    if (results?.attack_paths) {
+      setPaths(results.attack_paths)
+      setLoading(false)
+      return
+    }
 
     requestJson('/dashboard/me').then((d: any) => {
       if (cancelled) return
@@ -23,7 +30,8 @@ export default function AttackPathsPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [results])
+
 
   const FILTERS = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
   const filtered = filter === 'ALL' ? paths : paths.filter(p => p.exploitability === filter)

@@ -1,17 +1,6 @@
 'use client'
-import { createContext, useContext, useState, ReactNode } from 'react'
-
-interface ScanResult {
-  scan_id: string
-  status: string
-  resource_count?: number
-  node_count?: number
-  edge_count?: number
-  score?: number
-  attack_paths?: any[]
-  graph_data?: any
-  completed_at?: string
-}
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { getDashboard, getConnection, ConnectionInfo, ScanResult } from '@/lib/api'
 
 interface ScanContextType {
   results: ScanResult | null
@@ -20,6 +9,9 @@ interface ScanContextType {
   setScanId: (id: string | null) => void
   scanning: boolean
   setScanning: (scanning: boolean) => void
+  connection: ConnectionInfo | null
+  setConnection: (connection: ConnectionInfo | null) => void
+  refreshData: () => Promise<void>
 }
 
 const ScanContext = createContext<ScanContextType | undefined>(undefined)
@@ -28,9 +20,37 @@ export function ScanProvider({ children }: { children: ReactNode }) {
   const [results, setResults] = useState<ScanResult | null>(null)
   const [scanId, setScanId] = useState<string | null>(null)
   const [scanning, setScanning] = useState(false)
+  const [connection, setConnection] = useState<ConnectionInfo | null>(null)
+
+  const refreshData = useCallback(async () => {
+    try {
+      const [dashData, connData] = await Promise.all([
+        getDashboard('me'),
+        getConnection('me')
+      ])
+      if (dashData && dashData.status !== 'no_scan') {
+        setResults(dashData)
+      }
+      if (connData) {
+        setConnection(connData)
+      }
+    } catch {
+      // Ignore initial fetch errors if backend is starting
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshData()
+  }, [refreshData])
 
   return (
-    <ScanContext.Provider value={{ results, setResults, scanId, setScanId, scanning, setScanning }}>
+    <ScanContext.Provider value={{
+      results, setResults,
+      scanId, setScanId,
+      scanning, setScanning,
+      connection, setConnection,
+      refreshData
+    }}>
       {children}
     </ScanContext.Provider>
   )
@@ -43,3 +63,4 @@ export function useScan() {
   }
   return context
 }
+

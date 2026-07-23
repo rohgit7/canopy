@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 # ── DB ────────────────────────────────────────────────────────────────────────
 from ..db.connection import ping
 from ..db.users      import upsert_user
-from ..db.connections import save_connection, get_role_arn
+from ..db.connections import save_connection, get_role_arn, get_connection
 from ..db.scans      import (
     create_scan,
     update_resource_count,
@@ -93,6 +93,15 @@ async def connect_account(req: ConnectRequest):
         }
     except Exception as e:
         raise HTTPException(400, f"Cannot assume role: {e}")
+
+
+@app.get("/connection/{customer_id}")
+async def get_connection_status(customer_id: str):
+    conn = get_connection(customer_id)
+    if not conn:
+        return {"status": "not_connected"}
+    return _serialise(conn)
+
 
 
 @app.post("/scan")

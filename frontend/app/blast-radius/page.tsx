@@ -1,14 +1,21 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { PageLayout } from '@/components/PageLayout'
+import { useScan } from '@/context/ScanContext'
 import { requestJson } from '@/lib/api'
 
 export default function BlastRadiusPage() {
+  const { results } = useScan()
   const [paths,   setPaths]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
+    if (results?.attack_paths) {
+      setPaths(results.attack_paths)
+      setLoading(false)
+      return
+    }
 
     requestJson('/dashboard/me').then((d: any) => {
       if (cancelled) return
@@ -21,7 +28,8 @@ export default function BlastRadiusPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [results])
+
 
   const sorted = [...paths].sort((a, b) => (b.blast_radius||0) - (a.blast_radius||0))
 
