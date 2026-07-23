@@ -6,7 +6,7 @@ import { requestJson } from '@/lib/api'
 
 export default function BlastRadiusPage() {
   const { results, loaded } = useScan()
-  const [paths,   setPaths]   = useState<any[]>([])
+  const [paths, setPaths] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function BlastRadiusPage() {
 
 
 
-  const sorted = [...paths].sort((a, b) => (b.blast_radius||0) - (a.blast_radius||0))
+  const sorted = [...paths].sort((a, b) => (b.blast_radius || 0) - (a.blast_radius || 0))
 
   const getColor = (score: number) =>
     score > 70 ? 'var(--aws-risk)' : score > 40 ? 'var(--aws-orange)' : 'var(--aws-storage)'
@@ -34,9 +34,9 @@ export default function BlastRadiusPage() {
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Max Blast Radius', value: paths.length ? `${Math.max(...paths.map(p=>p.blast_radius??0)).toFixed(0)}%` : '—', color: 'var(--aws-risk)' },
-          { label: 'Avg Blast Radius', value: paths.length ? `${(paths.reduce((s,p)=>s+(p.blast_radius??0),0)/paths.length).toFixed(0)}%` : '—', color: 'var(--aws-orange)' },
-          { label: 'Paths Analysed',   value: paths.length, color: 'var(--aws-blue)' },
+          { label: 'Max Blast Radius', value: paths.length ? `${Math.max(...paths.map(p => p.blast_radius ?? 0)).toFixed(0)}%` : '—', color: 'var(--aws-risk)' },
+          { label: 'Avg Blast Radius', value: paths.length ? `${(paths.reduce((s, p) => s + (p.blast_radius ?? 0), 0) / paths.length).toFixed(0)}%` : '—', color: 'var(--aws-orange)' },
+          { label: 'Paths Analysed', value: paths.length, color: 'var(--aws-blue)' },
         ].map(c => (
           <div key={c.label} style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 16 }}>
             <div style={{ fontSize: 10, color: '#455a64', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 8 }}>{c.label}</div>
@@ -50,7 +50,7 @@ export default function BlastRadiusPage() {
       {/* Per-path blast radius cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {sorted.map((path, i) => {
-          const br    = path.blast_radius ?? 0
+          const br = path.blast_radius ?? 0
           const color = getColor(br)
           return (
             <div key={i} style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 16 }}>
