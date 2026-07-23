@@ -173,7 +173,8 @@ async def _run_scan(scan_id: str, role_arn: str, customer_id: str):
         blast_c = BlastRadiusCalculator(graph)
 
         for p in paths:
-            p.blast_radius = blast.calculate(p.target_id).score
+            p.blast_radius = blast_c.calculate(p.target_id).score
+
 
         # 6. AI narration
         for p in [x for x in paths if x.exploitability == "CRITICAL"][:3]:
