@@ -112,6 +112,7 @@ export default function ResourceGraphPage() {
   const [loading, setLoading] = useState(true)
   const [tooltip, setTooltip] = useState<any>(null)
   const [selected, setSelected] = useState<any>(null)
+  const [selectedNodeCount, setSelectedNodeCount] = useState<number>(0)
   const [layout, setLayout] = useState('cose')
   const [showEdgeLabels, setShowEdgeLabels] = useState(false)
   const [filterType, setFilterType] = useState<string | null>(null)
@@ -137,9 +138,7 @@ export default function ResourceGraphPage() {
     }
   }, [results, loaded])
 
-
-
-  // Build Cytoscape
+  // Build Cytoscape with Group Selection & Dragging
   useEffect(() => {
     if (!cyRef.current || !graphData) return
     if (cy.current) cy.current.destroy()
@@ -155,6 +154,8 @@ export default function ResourceGraphPage() {
 
     cy.current = cytoscape({
       container: cyRef.current,
+      boxSelectionEnabled: true,
+      selectionType: 'additive',
       elements: [
         ...filteredNodes.map((n: any) => ({
           data: {
@@ -221,6 +222,16 @@ export default function ResourceGraphPage() {
           } as any,
         },
         {
+          selector: 'node:selected',
+          style: {
+            'border-color': '#00e5ff',
+            'border-width': 4,
+            'shadow-blur': 16,
+            'shadow-color': '#00e5ff',
+            'background-color': '#00838f',
+          } as any,
+        },
+        {
           selector: 'edge',
           style: {
             width: (e: any) => Math.max(1, 3.5 - (e.data('weight') || 0.5) * 3),
@@ -274,14 +285,60 @@ export default function ResourceGraphPage() {
         nodeRepulsion: 8000,
         padding: 40,
         stop: () => {
-          // Highlight attack path if selected
           if (highlightPath !== null && paths[highlightPath]) {
             applyPathHighlight(paths[highlightPath])
           }
         },
       } as any,
-
     })
+
+    // ── Multi-Node Synchronized Group Dragging ────────────────────────────────
+    let grabPositions: Record<string, { x: number; y: number }> = {}
+
+    cy.current.on('grab', 'node', (evt: any) => {
+      const grabbedNode = evt.target
+      const selectedNodes = cy.current.nodes(':selected')
+
+      if (selectedNodes.contains(grabbedNode)) {
+        grabPositions = {}
+        selectedNodes.forEach((node: any) => {
+          grabPositions[node.id()] = { ...node.position() }
+        })
+      }
+    })
+
+    cy.current.on('drag', 'node', (evt: any) => {
+      const grabbedNode = evt.target
+      const initialPos = grabPositions[grabbedNode.id()]
+      if (!initialPos) return
+
+      const curPos = grabbedNode.position()
+      const dx = curPos.x - initialPos.x
+      const dy = curPos.y - initialPos.y
+
+      cy.current.nodes(':selected').forEach((node: any) => {
+        if (node.id() !== grabbedNode.id()) {
+          const orig = grabPositions[node.id()]
+          if (orig) {
+            node.position({
+              x: orig.x + dx,
+              y: orig.y + dy,
+            })
+          }
+        }
+      })
+    })
+
+    cy.current.on('free', 'node', () => {
+      grabPositions = {}
+    })
+
+    const updateSelectionCount = () => {
+      const count = cy.current.nodes(':selected').length
+      setSelectedNodeCount(count)
+    }
+
+    cy.current.on('select unselect', 'node', updateSelectionCount)
 
     // Tooltip on hover
     cy.current.on('mouseover', 'node', (evt: any) => {
@@ -353,17 +410,22 @@ export default function ResourceGraphPage() {
     applyPathHighlight(paths[i])
   }
 
-  const resetLayout = () => {
-    cy.current?.layout({ name: layout, animate: true, idealEdgeLength: 100, nodeRepulsion: 8000, padding: 40 }).run()
+  const clearNodeSelection = () => {
+    cy.current?.nodes().unselect()
+    setSelectedNodeCount(0)
+  }
+
+  const selectAllNodes = () => {
+    cy.current?.nodes().select()
+    setSelectedNodeCount(cy.current?.nodes().length || 0)
   }
 
   const fitGraph = () => cy.current?.fit(undefined, 40)
-
   const zoomIn = () => cy.current?.zoom({ level: cy.current.zoom() * 1.3, renderedPosition: { x: cyRef.current!.clientWidth / 2, y: cyRef.current!.clientHeight / 2 } })
   const zoomOut = () => cy.current?.zoom({ level: cy.current.zoom() * 0.7, renderedPosition: { x: cyRef.current!.clientWidth / 2, y: cyRef.current!.clientHeight / 2 } })
 
   return (
-    <PageLayout title="Resource Graph" subtitle="Interactive topology of your AWS account — hover nodes and edges for details">
+    <PageLayout title="Resource Graph" subtitle="Interactive topology of your AWS account — multi-node selection & group movement enabled">
       <div style={{ display: 'flex', gap: 14, height: 'calc(100vh - 180px)' }}>
 
         {/* ── Left panel: controls ── */}
@@ -384,6 +446,24 @@ export default function ResourceGraphPage() {
                 <span style={{ color: s.color, fontWeight: 500 }}>{s.value}</span>
               </div>
             ))}
+          </div>
+
+          {/* Multi-Node Group Movement Tools */}
+          <div style={{ background: '#0a1929', border: '1px solid #00e5ff', borderRadius: 8, padding: 14 }}>
+            <div style={{ fontSize: 10, color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '.7px', fontWeight: 700, marginBottom: 8 }}>
+              Group Movement Tools
+            </div>
+            <div style={{ fontSize: 10, color: '#607d8b', lineHeight: 1.4, marginBottom: 10 }}>
+              Hold <strong style={{ color: '#e1f5fe' }}>Shift</strong> & drag a selection box or Shift-click multiple nodes to move them as a group.
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button onClick={selectAllNodes} style={{ flex: 1, padding: '6px', background: '#0f2236', border: '1px solid #00e5ff', borderRadius: 6, color: '#00e5ff', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
+                Select All
+              </button>
+              <button onClick={clearNodeSelection} style={{ flex: 1, padding: '6px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
+                Clear ({selectedNodeCount})
+              </button>
+            </div>
           </div>
 
           {/* Layout */}
@@ -525,6 +605,18 @@ export default function ResourceGraphPage() {
                 data={tooltip.data}
                 onClose={() => setTooltip(null)}
               />
+            )}
+
+            {/* Floating Group Selection Banner */}
+            {selectedNodeCount > 1 && (
+              <div style={{
+                position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)',
+                background: '#042738', border: '1px solid #00e5ff', borderRadius: 8,
+                padding: '8px 18px', fontSize: 11, color: '#00e5ff', fontWeight: 600,
+                boxShadow: '0 4px 20px rgba(0,229,255,0.25)', zIndex: 100,
+              }}>
+                ⚡ Group Movement Active: {selectedNodeCount} nodes selected — drag any selected node to move group together
+              </div>
             )}
 
             {/* Zoom controls overlay */}

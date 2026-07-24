@@ -3,13 +3,13 @@ import { useEffect, useRef } from 'react'
 import cytoscape from 'cytoscape'
 
 const TYPE_COLORS: Record<string, string> = {
-  'ec2:instance':      '#ff9900',
-  's3:bucket':         '#7aa116',
-  'iam:role':          '#8c4fff',
-  'iam:user':          '#b088ff',
-  'lambda:function':   '#ec7211',
-  'ec2:security_group':'#146eb4',
-  'pseudo:internet':   '#d13212',
+  'ec2:instance': '#ff9900',
+  's3:bucket': '#7aa116',
+  'iam:role': '#8c4fff',
+  'iam:user': '#b088ff',
+  'lambda:function': '#ec7211',
+  'ec2:security_group': '#146eb4',
+  'pseudo:internet': '#d13212',
 }
 
 export function SecurityGraph({
@@ -52,59 +52,59 @@ export function SecurityGraph({
         {
           selector: 'node',
           style: {
-            'background-color':  (n: any) => TYPE_COLORS[n.data('type')] || '#475569',
-            label:               'data(label)',
-            color:               '#e2e8f0',
-            'font-size':         '10px',
-            'font-weight':       '600',
-            'text-valign':       'bottom',
-            'text-margin-y':     6,
-            'text-halign':       'center',
-            width:               (n: any) => (n.data('type') === 'pseudo:internet' ? 44 : 36),
-            height:              (n: any) => (n.data('type') === 'pseudo:internet' ? 44 : 36),
-            'border-width':      3,
-            'border-color':      (n: any) =>
+            'background-color': (n: any) => TYPE_COLORS[n.data('type')] || '#475569',
+            label: 'data(label)',
+            color: '#e2e8f0',
+            'font-size': '10px',
+            'font-weight': '600',
+            'text-valign': 'bottom',
+            'text-margin-y': 6,
+            'text-halign': 'center',
+            width: (n: any) => (n.data('type') === 'pseudo:internet' ? 44 : 36),
+            height: (n: any) => (n.data('type') === 'pseudo:internet' ? 44 : 36),
+            'border-width': 3,
+            'border-color': (n: any) =>
               n.data('type') === 'pseudo:internet' ? '#d13212'
-              : n.data('is_sensitive') ? '#d13212'
-              : '#ff9900',
+                : n.data('is_sensitive') ? '#d13212'
+                  : '#ff9900',
           } as any,
         },
         {
           selector: 'edge',
           style: {
-            width:                4,
-            'line-color':         '#d13212',
+            width: 4,
+            'line-color': '#d13212',
             'target-arrow-color': '#d13212',
             'target-arrow-shape': 'triangle',
-            'curve-style':        'bezier',
+            'curve-style': 'bezier',
           } as any,
         },
         {
           selector: '.attack-path',
           style: {
-            'line-color':         '#d13212',
-            width:                4,
+            'line-color': '#d13212',
+            width: 4,
             'target-arrow-color': '#d13212',
           },
         },
       ],
       layout: (isolatePath && pathNodeIds)
         ? {
-            name: 'breadthfirst',
-            directed: true,
-            padding: 35,
-            spacingFactor: 1.5,
-          } as any
+          name: 'breadthfirst',
+          directed: true,
+          padding: 35,
+          spacingFactor: 1.5,
+        } as any
         : {
-            name: 'cose',
-            animate: false,
-            randomize: false,
-            numIter: 150,
-            initialTemp: 200,
-            coolingFactor: 0.99,
-            idealEdgeLength: 80,
-            nodeOverlap: 20,
-          } as any,
+          name: 'cose',
+          animate: false,
+          randomize: false,
+          numIter: 150,
+          initialTemp: 200,
+          coolingFactor: 0.99,
+          idealEdgeLength: 80,
+          nodeOverlap: 20,
+        } as any,
     })
 
     if (attackPaths?.length > 0) {
