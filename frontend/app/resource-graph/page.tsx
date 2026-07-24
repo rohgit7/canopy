@@ -7,29 +7,29 @@ import { requestJson } from '@/lib/api'
 
 // ── Colour + metadata maps ────────────────────────────────────────────────────
 const NODE_TYPES: Record<string, { color: string; border: string; icon: string; label: string; desc: string }> = {
-  'ec2:instance':       { color: '#1d4ed8', border: '#3b82f6', icon: '⬡', label: 'EC2 Instance',    desc: 'Virtual server running in AWS' },
-  'ec2:security_group': { color: '#374151', border: '#6b7280', icon: '⬡', label: 'Security Group',  desc: 'Firewall rules controlling network access' },
-  's3:bucket':          { color: '#92400e', border: '#f59e0b', icon: '⬡', label: 'S3 Bucket',       desc: 'Object storage — files and data' },
-  'iam:role':           { color: '#4c1d95', border: '#8b5cf6', icon: '⬡', label: 'IAM Role',        desc: 'AWS identity with permission policies' },
-  'iam:user':           { color: '#3b0764', border: '#a78bfa', icon: '⬡', label: 'IAM User',        desc: 'Human or service account identity' },
-  'lambda:function':    { color: '#7c2d12', border: '#f97316', icon: '⬡', label: 'Lambda Function', desc: 'Serverless code execution environment' },
-  'pseudo:internet':    { color: '#7f1d1d', border: '#ef4444', icon: '⬡', label: 'Internet',        desc: 'Attacker entry point — public internet' },
+  'ec2:instance': { color: '#1d4ed8', border: '#3b82f6', icon: '⬡', label: 'EC2 Instance', desc: 'Virtual server running in AWS' },
+  'ec2:security_group': { color: '#374151', border: '#6b7280', icon: '⬡', label: 'Security Group', desc: 'Firewall rules controlling network access' },
+  's3:bucket': { color: '#92400e', border: '#f59e0b', icon: '⬡', label: 'S3 Bucket', desc: 'Object storage — files and data' },
+  'iam:role': { color: '#4c1d95', border: '#8b5cf6', icon: '⬡', label: 'IAM Role', desc: 'AWS identity with permission policies' },
+  'iam:user': { color: '#3b0764', border: '#a78bfa', icon: '⬡', label: 'IAM User', desc: 'Human or service account identity' },
+  'lambda:function': { color: '#7c2d12', border: '#f97316', icon: '⬡', label: 'Lambda Function', desc: 'Serverless code execution environment' },
+  'pseudo:internet': { color: '#7f1d1d', border: '#ef4444', icon: '⬡', label: 'Internet', desc: 'Attacker entry point — public internet' },
 }
 
 const EDGE_TYPES: Record<string, { color: string; label: string; weight: number; desc: string; risk: string }> = {
-  'EXPOSES_PORT':  { color: '#ef4444', label: 'Exposes Port',        weight: 0.1, desc: 'Resource reachable from the internet via open port', risk: 'CRITICAL' },
-  'HAS_ROLE':      { color: '#f97316', label: 'Has IAM Role',        weight: 0.2, desc: 'EC2/Lambda runs with this IAM role (metadata endpoint)', risk: 'HIGH' },
-  'CAN_ASSUME':    { color: '#eab308', label: 'Can Assume Role',     weight: 0.2, desc: 'Role can call sts:AssumeRole on the target role', risk: 'HIGH' },
-  'CAN_ACCESS':    { color: '#4fc3f7', label: 'Can Access',          weight: 0.3, desc: 'IAM policy allows this role to perform actions on target', risk: 'MEDIUM' },
+  'EXPOSES_PORT': { color: '#ef4444', label: 'Exposes Port', weight: 0.1, desc: 'Resource reachable from the internet via open port', risk: 'CRITICAL' },
+  'HAS_ROLE': { color: '#f97316', label: 'Has IAM Role', weight: 0.2, desc: 'EC2/Lambda runs with this IAM role (metadata endpoint)', risk: 'HIGH' },
+  'CAN_ASSUME': { color: '#eab308', label: 'Can Assume Role', weight: 0.2, desc: 'Role can call sts:AssumeRole on the target role', risk: 'HIGH' },
+  'CAN_ACCESS': { color: '#4fc3f7', label: 'Can Access', weight: 0.3, desc: 'IAM policy allows this role to perform actions on target', risk: 'MEDIUM' },
   'HAS_ENV_CREDS': { color: '#a78bfa', label: 'Has Env Credentials', weight: 0.1, desc: 'Sensitive credentials found in environment variables', risk: 'CRITICAL' },
-  'ATTACHED_SG':   { color: '#6b7280', label: 'Attached SG',         weight: 0.0, desc: 'Security group attached to this resource', risk: 'INFO' },
+  'ATTACHED_SG': { color: '#6b7280', label: 'Attached SG', weight: 0.0, desc: 'Security group attached to this resource', risk: 'INFO' },
 }
 
 const RISK_COLORS: Record<string, string> = {
   CRITICAL: '#ef5350',
-  HIGH:     '#ff9800',
-  MEDIUM:   '#4fc3f7',
-  INFO:     '#607d8b',
+  HIGH: '#ff9800',
+  MEDIUM: '#4fc3f7',
+  INFO: '#607d8b',
 }
 
 // ── Tooltip component ─────────────────────────────────────────────────────────
@@ -88,7 +88,8 @@ function Tooltip({ x, y, data, onClose }: { x: number; y: number; data: any; onC
             <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#0f2236', color: '#37637a' }}>
               DIFFICULTY: {data.weight}
             </span>
-            <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3,
+            <span style={{
+              fontSize: 9, padding: '2px 6px', borderRadius: 3,
               background: '#0f1a2a',
               color: RISK_COLORS[(edgeDef as any)?.risk || 'INFO'],
             }}>
@@ -103,19 +104,19 @@ function Tooltip({ x, y, data, onClose }: { x: number; y: number; data: any; onC
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ResourceGraphPage() {
-  const cyRef      = useRef<HTMLDivElement>(null)
-  const cy         = useRef<any>(null)
+  const cyRef = useRef<HTMLDivElement>(null)
+  const cy = useRef<any>(null)
   const { results, loaded } = useScan()
-  const [graphData, setGraphData]   = useState<any>(null)
-  const [paths,     setPaths]       = useState<any[]>([])
-  const [loading,   setLoading]     = useState(true)
-  const [tooltip,   setTooltip]     = useState<any>(null)
-  const [selected,  setSelected]    = useState<any>(null)
-  const [layout,    setLayout]      = useState('cose')
+  const [graphData, setGraphData] = useState<any>(null)
+  const [paths, setPaths] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tooltip, setTooltip] = useState<any>(null)
+  const [selected, setSelected] = useState<any>(null)
+  const [layout, setLayout] = useState('cose')
   const [showEdgeLabels, setShowEdgeLabels] = useState(false)
   const [filterType, setFilterType] = useState<string | null>(null)
   const [highlightPath, setHighlightPath] = useState<number | null>(null)
-  const [stats,     setStats]       = useState({ nodes: 0, edges: 0, internet: 0, sensitive: 0, admin: 0 })
+  const [stats, setStats] = useState({ nodes: 0, edges: 0, internet: 0, sensitive: 0, admin: 0 })
 
   // Fetch data
   useEffect(() => {
@@ -124,11 +125,11 @@ export default function ResourceGraphPage() {
       setPaths(results.attack_paths || [])
       const nodes = results.graph_data?.nodes || []
       setStats({
-        nodes:     nodes.length,
-        edges:     results.graph_data?.links?.length || 0,
-        internet:  nodes.filter((n: any) => n.internet_facing).length,
+        nodes: nodes.length,
+        edges: results.graph_data?.links?.length || 0,
+        internet: nodes.filter((n: any) => n.internet_facing).length,
         sensitive: nodes.filter((n: any) => n.is_sensitive).length,
-        admin:     nodes.filter((n: any) => n.is_admin).length,
+        admin: nodes.filter((n: any) => n.is_admin).length,
       })
       setLoading(false)
     } else if (loaded) {
@@ -148,7 +149,7 @@ export default function ResourceGraphPage() {
       : graphData.nodes
 
     const filteredNodeIds = new Set(filteredNodes.map((n: any) => n.id))
-    const filteredLinks   = graphData.links.filter((e: any) =>
+    const filteredLinks = graphData.links.filter((e: any) =>
       filteredNodeIds.has(e.source) && filteredNodeIds.has(e.target)
     )
 
@@ -157,26 +158,26 @@ export default function ResourceGraphPage() {
       elements: [
         ...filteredNodes.map((n: any) => ({
           data: {
-            id:             String(n.id),
-            label:          (n.name || n.id).substring(0, 18),
-            type:           n.type,
-            name:           n.name,
-            region:         n.region,
-            internet_facing:n.internet_facing,
-            is_sensitive:   n.is_sensitive,
-            is_admin:       n.is_admin,
-            kind:           'node',
+            id: String(n.id),
+            label: (n.name || n.id).substring(0, 18),
+            type: n.type,
+            name: n.name,
+            region: n.region,
+            internet_facing: n.internet_facing,
+            is_sensitive: n.is_sensitive,
+            is_admin: n.is_admin,
+            kind: 'node',
           },
         })),
         ...filteredLinks.map((e: any, i: number) => ({
           data: {
-            id:         `e${i}`,
-            source:     String(e.source),
-            target:     String(e.target),
-            edge_type:  e.edge_type || '',
-            weight:     e.weight || 0.5,
-            kind:       'edge',
-            label:      showEdgeLabels ? (EDGE_TYPES[e.edge_type]?.label || e.edge_type) : '',
+            id: `e${i}`,
+            source: String(e.source),
+            target: String(e.target),
+            edge_type: e.edge_type || '',
+            weight: e.weight || 0.5,
+            kind: 'edge',
+            label: showEdgeLabels ? (EDGE_TYPES[e.edge_type]?.label || e.edge_type) : '',
           },
         })),
       ],
@@ -189,22 +190,22 @@ export default function ResourceGraphPage() {
               return def?.color || '#1a2d45'
             },
             'border-color': (n: any) => {
-              if (n.data('is_admin'))       return '#ff1744'
-              if (n.data('is_sensitive'))   return '#ef5350'
-              if (n.data('internet_facing'))return '#f97316'
+              if (n.data('is_admin')) return '#ff1744'
+              if (n.data('is_sensitive')) return '#ef5350'
+              if (n.data('internet_facing')) return '#f97316'
               return NODE_TYPES[n.data('type')]?.border || '#37637a'
             },
             'border-width': (n: any) =>
               n.data('is_admin') || n.data('is_sensitive') || n.data('internet_facing') ? 3 : 1.5,
-            label:           'data(label)',
-            color:           '#94a3b8',
-            'font-size':     '10px',
-            'font-family':   'monospace',
-            'text-valign':   'bottom',
-            'text-halign':   'center',
+            label: 'data(label)',
+            color: '#94a3b8',
+            'font-size': '10px',
+            'font-family': 'monospace',
+            'text-valign': 'bottom',
+            'text-halign': 'center',
             'text-margin-y': 4,
-            'text-wrap':     'wrap',
-            'text-max-width':'80px',
+            'text-wrap': 'wrap',
+            'text-max-width': '80px',
             width: (n: any) => {
               if (n.data('type') === 'pseudo:internet') return 48
               if (n.data('is_admin') || n.data('is_sensitive')) return 38
@@ -223,24 +224,24 @@ export default function ResourceGraphPage() {
           selector: 'edge',
           style: {
             width: (e: any) => Math.max(1, 3.5 - (e.data('weight') || 0.5) * 3),
-            'line-color':         (e: any) => EDGE_TYPES[e.data('edge_type')]?.color || '#1e3a5f',
+            'line-color': (e: any) => EDGE_TYPES[e.data('edge_type')]?.color || '#1e3a5f',
             'target-arrow-color': (e: any) => EDGE_TYPES[e.data('edge_type')]?.color || '#1e3a5f',
             'target-arrow-shape': 'triangle',
-            'curve-style':        'bezier',
-            'label':              'data(label)',
-            'font-size':          '8px',
-            'color':              '#455a64',
-            'text-rotation':      'autorotate',
-            'font-family':        'monospace',
+            'curve-style': 'bezier',
+            'label': 'data(label)',
+            'font-size': '8px',
+            'color': '#455a64',
+            'text-rotation': 'autorotate',
+            'font-family': 'monospace',
           } as any,
         },
         {
           selector: '.attack-edge',
           style: {
-            'line-color':         '#ef4444',
+            'line-color': '#ef4444',
             'target-arrow-color': '#ef4444',
-            width:                4,
-            'z-index':            999,
+            width: 4,
+            'z-index': 999,
           },
         },
         {
@@ -248,7 +249,7 @@ export default function ResourceGraphPage() {
           style: {
             'border-color': '#ef4444',
             'border-width': 4,
-            'z-index':      999,
+            'z-index': 999,
           },
         },
         {
@@ -284,8 +285,8 @@ export default function ResourceGraphPage() {
 
     // Tooltip on hover
     cy.current.on('mouseover', 'node', (evt: any) => {
-      const n    = evt.target
-      const pos  = evt.renderedPosition
+      const n = evt.target
+      const pos = evt.renderedPosition
       setTooltip({
         x: pos.x, y: pos.y,
         data: { ...n.data(), kind: 'node' },
@@ -294,7 +295,7 @@ export default function ResourceGraphPage() {
     cy.current.on('mouseout', 'node', () => setTooltip(null))
 
     cy.current.on('mouseover', 'edge', (evt: any) => {
-      const e   = evt.target
+      const e = evt.target
       const pos = evt.renderedPosition
       setTooltip({
         x: pos.x, y: pos.y,
@@ -358,7 +359,7 @@ export default function ResourceGraphPage() {
 
   const fitGraph = () => cy.current?.fit(undefined, 40)
 
-  const zoomIn  = () => cy.current?.zoom({ level: cy.current.zoom() * 1.3, renderedPosition: { x: cyRef.current!.clientWidth / 2, y: cyRef.current!.clientHeight / 2 } })
+  const zoomIn = () => cy.current?.zoom({ level: cy.current.zoom() * 1.3, renderedPosition: { x: cyRef.current!.clientWidth / 2, y: cyRef.current!.clientHeight / 2 } })
   const zoomOut = () => cy.current?.zoom({ level: cy.current.zoom() * 0.7, renderedPosition: { x: cyRef.current!.clientWidth / 2, y: cyRef.current!.clientHeight / 2 } })
 
   return (
@@ -372,11 +373,11 @@ export default function ResourceGraphPage() {
           <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Graph Stats</div>
             {[
-              { label: 'Total Nodes',      value: stats.nodes,     color: '#4fc3f7' },
-              { label: 'Total Edges',      value: stats.edges,     color: '#607d8b' },
-              { label: 'Internet-Facing',  value: stats.internet,  color: '#f97316' },
+              { label: 'Total Nodes', value: stats.nodes, color: '#4fc3f7' },
+              { label: 'Total Edges', value: stats.edges, color: '#607d8b' },
+              { label: 'Internet-Facing', value: stats.internet, color: '#f97316' },
               { label: 'Sensitive Assets', value: stats.sensitive, color: '#ef5350' },
-              { label: 'Admin Roles',      value: stats.admin,     color: '#ff1744' },
+              { label: 'Admin Roles', value: stats.admin, color: '#ff1744' },
             ].map(s => (
               <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #0d1e2f', fontSize: 11 }}>
                 <span style={{ color: '#455a64' }}>{s.label}</span>
@@ -390,15 +391,15 @@ export default function ResourceGraphPage() {
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Layout</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
-                { id: 'cose',        label: 'Force-Directed' },
-                { id: 'circle',      label: 'Circle'         },
-                { id: 'grid',        label: 'Grid'           },
-                { id: 'breadthfirst',label: 'Hierarchy'      },
+                { id: 'cose', label: 'Force-Directed' },
+                { id: 'circle', label: 'Circle' },
+                { id: 'grid', label: 'Grid' },
+                { id: 'breadthfirst', label: 'Hierarchy' },
               ].map(l => (
                 <button key={l.id} onClick={() => setLayout(l.id)} style={{
-                  padding: '6px 10px', background: layout===l.id ? '#1565c0' : 'transparent',
-                  border: `1px solid ${layout===l.id ? '#1565c0' : '#1a2d45'}`,
-                  borderRadius: 6, color: layout===l.id ? '#fff' : '#607d8b',
+                  padding: '6px 10px', background: layout === l.id ? '#1565c0' : 'transparent',
+                  border: `1px solid ${layout === l.id ? '#1565c0' : '#1a2d45'}`,
+                  borderRadius: 6, color: layout === l.id ? '#fff' : '#607d8b',
                   fontSize: 11, cursor: 'pointer', textAlign: 'left',
                 }}>
                   {l.label}
@@ -409,7 +410,7 @@ export default function ResourceGraphPage() {
               <button onClick={fitGraph} style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
                 Fit
               </button>
-              <button onClick={zoomIn}  style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
+              <button onClick={zoomIn} style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
                 Zoom +
               </button>
               <button onClick={zoomOut} style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
@@ -428,11 +429,11 @@ export default function ResourceGraphPage() {
               borderRadius: 6, color: !filterType ? '#fff' : '#607d8b', fontSize: 11, cursor: 'pointer', textAlign: 'left',
             }}>All Resources</button>
             {Object.entries(NODE_TYPES).filter(([k]) => k !== 'pseudo:internet').map(([type, def]) => (
-              <button key={type} onClick={() => setFilterType(filterType===type ? null : type)} style={{
+              <button key={type} onClick={() => setFilterType(filterType === type ? null : type)} style={{
                 width: '100%', padding: '5px 10px', marginBottom: 4,
-                background: filterType===type ? '#0f2236' : 'transparent',
-                border: `1px solid ${filterType===type ? def.border : '#1a2d45'}`,
-                borderRadius: 6, color: filterType===type ? def.border : '#607d8b',
+                background: filterType === type ? '#0f2236' : 'transparent',
+                border: `1px solid ${filterType === type ? def.border : '#1a2d45'}`,
+                borderRadius: 6, color: filterType === type ? def.border : '#607d8b',
                 fontSize: 11, cursor: 'pointer', textAlign: 'left',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
@@ -474,8 +475,8 @@ export default function ResourceGraphPage() {
               {paths.map((path, i) => (
                 <button key={i} onClick={() => handlePathHighlight(i)} style={{
                   width: '100%', padding: '7px 10px', marginBottom: 4,
-                  background: highlightPath===i ? '#1a0a0a' : 'transparent',
-                  border: `1px solid ${highlightPath===i ? '#ef5350' : '#1a2d45'}`,
+                  background: highlightPath === i ? '#1a0a0a' : 'transparent',
+                  border: `1px solid ${highlightPath === i ? '#ef5350' : '#1a2d45'}`,
                   borderRadius: 6, cursor: 'pointer', textAlign: 'left',
                 }}>
                   <div style={{ fontSize: 10, color: '#ef5350', marginBottom: 2 }}>
@@ -529,7 +530,7 @@ export default function ResourceGraphPage() {
             {/* Zoom controls overlay */}
             <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
-                { label: '+', fn: zoomIn  },
+                { label: '+', fn: zoomIn },
                 { label: '⊡', fn: fitGraph },
                 { label: '−', fn: zoomOut },
               ].map(btn => (
@@ -599,10 +600,10 @@ export default function ResourceGraphPage() {
           <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Node Borders</div>
             {[
-              { color: '#ff1744', label: 'Admin Role',       desc: 'Full account control' },
-              { color: '#ef5350', label: 'Sensitive Asset',  desc: 'Crown jewel target'   },
-              { color: '#f97316', label: 'Internet-Facing',  desc: 'Attacker entry point' },
-              { color: '#37637a', label: 'Internal',         desc: 'No public exposure'   },
+              { color: '#ff1744', label: 'Admin Role', desc: 'Full account control' },
+              { color: '#ef5350', label: 'Sensitive Asset', desc: 'Crown jewel target' },
+              { color: '#f97316', label: 'Internet-Facing', desc: 'Attacker entry point' },
+              { color: '#37637a', label: 'Internal', desc: 'No public exposure' },
             ].map(b => (
               <div key={b.color} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
                 <div style={{ width: 14, height: 14, borderRadius: '50%', border: `3px solid ${b.color}`, background: 'transparent', flexShrink: 0 }} />
@@ -616,7 +617,7 @@ export default function ResourceGraphPage() {
 
           {/* Selected element details */}
           {selected && (
-            <div style={{ background: '#0a1929', border: `1px solid ${selected.kind==='node' ? (NODE_TYPES[selected.type]?.border || '#1a2d45') : (EDGE_TYPES[selected.edge_type]?.color || '#1a2d45')}`, borderRadius: 8, padding: 14 }}>
+            <div style={{ background: '#0a1929', border: `1px solid ${selected.kind === 'node' ? (NODE_TYPES[selected.type]?.border || '#1a2d45') : (EDGE_TYPES[selected.edge_type]?.color || '#1a2d45')}`, borderRadius: 8, padding: 14 }}>
               <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>
                 Selected {selected.kind === 'node' ? 'Node' : 'Edge'}
               </div>
@@ -629,10 +630,10 @@ export default function ResourceGraphPage() {
                     {NODE_TYPES[selected.type]?.label || selected.type}
                   </div>
                   {[
-                    { k: 'Region',          v: selected.region },
+                    { k: 'Region', v: selected.region },
                     { k: 'Internet-Facing', v: selected.internet_facing ? 'Yes' : 'No' },
-                    { k: 'Sensitive',       v: selected.is_sensitive ? 'Yes' : 'No' },
-                    { k: 'Admin Access',    v: selected.is_admin ? 'Yes' : 'No' },
+                    { k: 'Sensitive', v: selected.is_sensitive ? 'Yes' : 'No' },
+                    { k: 'Admin Access', v: selected.is_admin ? 'Yes' : 'No' },
                   ].map(row => (
                     <div key={row.k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '3px 0', borderBottom: '1px solid #0d1e2f' }}>
                       <span style={{ color: '#455a64' }}>{row.k}</span>
@@ -650,7 +651,7 @@ export default function ResourceGraphPage() {
                   </div>
                   {[
                     { k: 'Difficulty', v: selected.weight?.toString() || '—' },
-                    { k: 'Risk',       v: EDGE_TYPES[selected.edge_type]?.risk || 'INFO' },
+                    { k: 'Risk', v: EDGE_TYPES[selected.edge_type]?.risk || 'INFO' },
                   ].map(row => (
                     <div key={row.k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '3px 0', borderBottom: '1px solid #0d1e2f' }}>
                       <span style={{ color: '#455a64' }}>{row.k}</span>

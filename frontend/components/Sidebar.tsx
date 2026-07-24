@@ -1,6 +1,8 @@
 'use client'
 import { useClerk } from '@clerk/nextjs'
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useEffect } from 'react'
 
 const NAV_ITEMS = [
   { icon: 'ti-layout-dashboard', label: 'Dashboard',    href: '/dashboard'    },
@@ -21,6 +23,13 @@ export function Sidebar({ onScan, scanning }: {
   const pathname = usePathname()
   const router   = useRouter()
   const { signOut } = useClerk()
+
+  useEffect(() => {
+    NAV_ITEMS.forEach(item => {
+      router.prefetch(item.href)
+    })
+    router.prefetch('/docs')
+  }, [router])
 
   const handleLogout = async () => {
     await signOut({ redirectUrl: '/' })
@@ -43,14 +52,14 @@ export function Sidebar({ onScan, scanning }: {
         {NAV_ITEMS.map(item => {
           const active = pathname === item.href
           return (
-            <div
+            <Link
               key={item.label}
-              onClick={() => router.push(item.href)}
+              href={item.href}
               className={`sidebar-link${active ? ' active' : ''}`}
             >
               <i className={`ti ${item.icon}`} style={{ fontSize: 16 }} />
               {item.label}
-            </div>
+            </Link>
           )
         })}
       </nav>
@@ -67,13 +76,12 @@ export function Sidebar({ onScan, scanning }: {
       )}
 
       <div className="sidebar-footer">
-        <div
-          onClick={() => router.push('/docs')}
+        <Link
+          href="/docs"
           className="sidebar-footer-link"
-          style={{ cursor: 'pointer' }}
         >
           <i className="ti ti-file-description" style={{ fontSize: 14 }} />Docs
-        </div>
+        </Link>
         <button
           type="button"
           onClick={handleLogout}

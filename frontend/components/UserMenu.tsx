@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
@@ -22,6 +23,10 @@ export function UserMenu() {
   const roleArn = connection?.role_arn || (typeof window !== 'undefined' ? localStorage.getItem('canopyRoleArn') || localStorage.getItem('canopy_role_arn') : null)
   const accountId = connection?.account_id || (typeof window !== 'undefined' ? localStorage.getItem('canopyAwsAccountId') : null)
   const region = 'ap-south-1'
+
+  useEffect(() => {
+    router.prefetch('/settings')
+  }, [router])
 
   useEffect(() => {
     if (!copied) return
@@ -76,16 +81,14 @@ export function UserMenu() {
                 <div className="user-menu-label">User</div>
                 <div className="user-menu-value">{displayName}</div>
               </div>
-              <button
-                type="button"
+              <Link
+                href="/settings"
                 className="user-menu-action"
-                onClick={() => {
-                  setOpen(false)
-                  router.push('/settings')
-                }}
+                onClick={() => setOpen(false)}
+                style={{ textDecoration: 'none' }}
               >
                 <Settings className="user-menu-action-icon" /> Settings
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -122,16 +125,14 @@ export function UserMenu() {
           </div>
 
           <div className="user-menu-actions">
-            <button
-              type="button"
+            <Link
+              href="/settings"
               className="user-menu-button"
-              onClick={() => {
-                setOpen(false)
-                router.push('/settings')
-              }}
+              onClick={() => setOpen(false)}
+              style={{ textDecoration: 'none' }}
             >
               <Shield className="user-menu-action-icon" /> Manage AWS
-            </button>
+            </Link>
             <button
               type="button"
               className="user-menu-button primary"
