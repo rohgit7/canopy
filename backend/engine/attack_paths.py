@@ -41,14 +41,23 @@ class AttackPath:
         return "LOW"
 
     @property
+    def risk_score(self) -> float:
+        base = max(10.0, min(99.0, 100.0 - (self.score * 15.0)))
+        if self.blast_radius:
+            base = min(99.0, base * 0.7 + self.blast_radius * 0.3)
+        return round(base, 1)
+
+    @property
     def hop_count(self) -> int:
         return len(self.hops)
 
     def to_dict(self) -> dict:
         return {
             "score":          round(self.score, 4),
+            "risk_score":     self.risk_score,
             "exploitability": self.exploitability,
             "hop_count":      self.hop_count,
+            "target_id":      self.target_id,
             "target_name":    self.target_name,
             "target_type":    self.target_type,
             "blast_radius":   self.blast_radius,

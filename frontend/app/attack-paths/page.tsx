@@ -156,7 +156,9 @@ export default function AttackPathsPage() {
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase' }}>Risk Score</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--orange)' }}>{selectedPath.score?.toFixed(0)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--orange)' }}>
+                    {Math.round(selectedPath.risk_score ?? Math.max(10, Math.min(99, 100 - ((selectedPath.score || 0.5) * 15))))}
+                  </div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase' }}>Blast Radius</div>

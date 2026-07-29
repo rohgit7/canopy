@@ -183,10 +183,9 @@ async def _run_scan(scan_id: str, role_arn: str, customer_id: str):
             except Exception as e:
                 log.warning(f"[{scan_id}] Narration failed: {e}")
 
-        deductions = {"CRITICAL": 25, "HIGH": 15, "MEDIUM": 8, "LOW": 3}
-        score      = max(0.0, 100.0 - sum(
-            deductions.get(p.exploitability, 0) for p in paths
-        ))
+        path_risks    = [p.risk_score for p in paths]
+        max_path_risk = max(path_risks) if path_risks else 0.0
+        score         = max(0.0, 100.0 - max_path_risk)
 
         complete_scan(
             scan_id        = scan_id,
@@ -224,10 +223,13 @@ def _to_d3(graph) -> dict:
             "id":              nid,
             "name":            d.get("name", nid),
             "type":            d.get("resource_type", "unknown"),
+            "arn":             d.get("arn", ""),
+            "account_id":      d.get("account_id", ""),
             "internet_facing": d.get("internet_facing", False),
             "is_sensitive":    d.get("is_sensitive", False),
             "is_admin":        d.get("is_admin", False),
             "region":          d.get("region", ""),
+            "metadata":        d.get("metadata", {}),
         }
         for nid, d in graph.G.nodes(data=True)
     ]

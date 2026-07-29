@@ -361,17 +361,35 @@ export default function ResourceGraphPage() {
     })
     cy.current.on('mouseout', 'edge', () => setTooltip(null))
 
-    // Select on click
+    // Select on click & highlight inbound/outbound neighborhood
     cy.current.on('tap', 'node', (evt: any) => {
       const n = evt.target
-      setSelected({ kind: 'node', ...n.data() })
+      const inNodes = n.incomers('node')
+      const outNodes = n.outgoers('node')
+      setSelected({
+        kind: 'node',
+        ...n.data(),
+        inboundCount: inNodes.length,
+        outboundCount: outNodes.length,
+      })
+
+      // Dim all elements and highlight clicked node + connected inbound/outbound neighborhood
+      cy.current.elements().removeClass('attack-edge attack-node dimmed highlighted')
+      cy.current.elements().addClass('dimmed')
+      n.closedNeighborhood().removeClass('dimmed').addClass('highlighted')
     })
+
     cy.current.on('tap', 'edge', (evt: any) => {
       const e = evt.target
       setSelected({ kind: 'edge', ...e.data() })
+      cy.current.elements().removeClass('attack-edge attack-node dimmed highlighted')
     })
+
     cy.current.on('tap', (evt: any) => {
-      if (evt.target === cy.current) setSelected(null)
+      if (evt.target === cy.current) {
+        setSelected(null)
+        cy.current.elements().removeClass('attack-edge attack-node dimmed highlighted')
+      }
     })
 
   }, [graphData, layout, filterType, showEdgeLabels])
@@ -560,7 +578,7 @@ export default function ResourceGraphPage() {
                   borderRadius: 6, cursor: 'pointer', textAlign: 'left',
                 }}>
                   <div style={{ fontSize: 10, color: '#ef5350', marginBottom: 2 }}>
-                    {path.exploitability} · Score {path.score?.toFixed(2)}
+                    {path.exploitability} · Risk Score {Math.round(path.risk_score ?? Math.max(10, Math.min(99, 100 - ((path.score || 0.5) * 15))))}/100
                   </div>
                   <div style={{ fontSize: 10, color: '#607d8b' }}>
                     → {path.target_name}
@@ -722,14 +740,16 @@ export default function ResourceGraphPage() {
                     {NODE_TYPES[selected.type]?.label || selected.type}
                   </div>
                   {[
-                    { k: 'Region', v: selected.region },
+                    { k: 'Region', v: selected.region || 'global' },
+                    { k: 'Inbound Nodes', v: selected.inboundCount !== undefined ? `${selected.inboundCount} node(s)` : '—' },
+                    { k: 'Outbound Nodes', v: selected.outboundCount !== undefined ? `${selected.outboundCount} node(s)` : '—' },
                     { k: 'Internet-Facing', v: selected.internet_facing ? 'Yes' : 'No' },
                     { k: 'Sensitive', v: selected.is_sensitive ? 'Yes' : 'No' },
                     { k: 'Admin Access', v: selected.is_admin ? 'Yes' : 'No' },
                   ].map(row => (
                     <div key={row.k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, padding: '3px 0', borderBottom: '1px solid #0d1e2f' }}>
                       <span style={{ color: '#455a64' }}>{row.k}</span>
-                      <span style={{ color: row.v === 'Yes' ? '#ef5350' : '#607d8b' }}>{row.v}</span>
+                      <span style={{ color: row.v === 'Yes' ? '#ef5350' : row.k.includes('Nodes') ? '#00e5ff' : '#607d8b' }}>{row.v}</span>
                     </div>
                   ))}
                 </>
@@ -752,11 +772,14 @@ export default function ResourceGraphPage() {
                   ))}
                 </>
               )}
-              <button onClick={() => setSelected(null)} style={{
-                marginTop: 10, width: '100%', padding: '4px', background: 'transparent',
-                border: '1px solid #1a2d45', borderRadius: 5, color: '#455a64', fontSize: 10, cursor: 'pointer',
+              <button onClick={() => {
+                setSelected(null)
+                cy.current?.elements().removeClass('attack-edge attack-node dimmed highlighted')
+              }} style={{
+                marginTop: 10, width: '100%', padding: '6px', background: 'transparent',
+                border: '1px solid #1a2d45', borderRadius: 5, color: '#00e5ff', fontSize: 10, cursor: 'pointer', fontWeight: 600,
               }}>
-                Deselect
+                Clear Focus / Deselect
               </button>
             </div>
           )}

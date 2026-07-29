@@ -59,7 +59,7 @@ export function AttackPathCard({
           <div className="mt-1 text-xs flex items-center gap-3" style={{ color: 'var(--text-dim)' }}>
             <span>{path.hop_count} hops</span>
             <span>-</span>
-            <span>Score: {path.score?.toFixed(0)}/100</span>
+            <span>Risk Score: {Math.round(path.risk_score ?? Math.max(10, Math.min(99, 100 - ((path.score || 0.5) * 15))))}/100</span>
             <span>-</span>
             <span className="text-orange-400">Blast Radius: {path.blast_radius?.toFixed(0)}%</span>
           </div>

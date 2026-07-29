@@ -138,6 +138,7 @@ class IAMExtractor(BaseExtractor):
                     raw_config=user,
                     metadata={
                         "attached_policies": [p["PolicyArn"] for p in attached],
+                        "attached_policy_names": [p["PolicyName"] for p in attached],
                         "active_key_count": len(
                             [k for k in keys if k["Status"] == "Active"]
                         ),

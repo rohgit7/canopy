@@ -16,6 +16,16 @@ const geistMono = localFont({
   display: 'swap',
 })
 
+export const metadata = {
+  title: 'Canopy - AWS Security Graph & Attack Path Analyzer',
+  description: 'Real-time graph analysis, attack path engine, and IAM analyzer for AWS security',
+  icons: {
+    icon: '/canopy-logo.svg',
+    shortcut: '/canopy-logo.svg',
+    apple: '/canopy-logo.svg',
+  },
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -25,7 +35,9 @@ export default function RootLayout({
     <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
         <head>
-          <link rel="icon" href="/canopy.ico" />
+          <link rel="icon" type="image/svg+xml" href="/canopy-logo.svg" />
+          <link rel="shortcut icon" href="/canopy-logo.svg" />
+          <link rel="apple-touch-icon" href="/canopy-logo.svg" />
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
           <ScanProvider>

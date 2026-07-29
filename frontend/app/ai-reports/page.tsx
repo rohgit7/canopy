@@ -53,6 +53,17 @@ export default function AIReportsPage() {
     }
   }, [results, loaded])
 
+  // Calculate path risk score and overall environment risk score
+  const getPathRisk = (p: any) => p.risk_score ?? Math.round(Math.max(10, Math.min(99, 100 - ((p.score || 0.5) * 15))))
+
+  const envRiskScore = useMemo(() => {
+    if (!results) return null
+    if (paths && paths.length > 0) {
+      return Math.max(...paths.map(getPathRisk))
+    }
+    return score !== null ? Math.round(Math.max(0, Math.min(100, 100 - score))) : 0
+  }, [results, paths, score])
+
   // Extract paths with AI narrative (100% dynamic from backend scan data)
   const narratedPaths = useMemo(() => {
     return paths.filter(p => p.ai_narrative)
@@ -109,8 +120,8 @@ export default function AIReportsPage() {
             </h2>
 
             <p className="text-xs text-slate-300 leading-relaxed font-sans">
-              {score !== null
-                ? `Your AWS environment security posture score is evaluated at ${score.toFixed(0)}/100. `
+              {envRiskScore !== null
+                ? `Your AWS environment Risk Score is evaluated at ${envRiskScore}/100 (${envRiskScore >= 80 ? 'Critical Risk' : envRiskScore >= 50 ? 'High Risk' : 'Low Risk'}). `
                 : 'Run a security scan to evaluate your AWS environment. '
               }
               {paths.length === 0
@@ -136,21 +147,21 @@ export default function AIReportsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-lg">
           <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-            <span>Security Posture</span>
-            <Shield className="h-4 w-4 text-blue-400" />
+            <span>Risk Score</span>
+            <Shield className="h-4 w-4 text-red-400" />
           </div>
-          <div className="text-3xl font-black text-slate-100">
-            {score !== null ? `${score.toFixed(0)}` : '—'} <span className="text-sm font-normal text-slate-400">/ 100</span>
+          <div className={`text-3xl font-black ${envRiskScore !== null ? (envRiskScore >= 80 ? 'text-red-500' : envRiskScore >= 50 ? 'text-amber-500' : 'text-emerald-500') : 'text-slate-100'}`}>
+            {envRiskScore !== null ? `${envRiskScore}` : '—'} <span className="text-sm font-normal text-slate-400">/ 100</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">AWS Defense-in-Depth Score</div>
+          <div className="text-[11px] text-slate-400 mt-1">Environment Risk Score</div>
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 shadow-lg">
           <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
             <span>AI Narratives</span>
-            <Bot className="h-4 w-4 text-purple-400" />
+            <Bot className="h-4 w-4 text-amber-500" />
           </div>
-          <div className="text-3xl font-black text-purple-400">{totalNarratedCount}</div>
+          <div className="text-3xl font-black text-amber-500">{totalNarratedCount}</div>
           <div className="text-[11px] text-slate-400 mt-1">Generated Threat Narratives</div>
         </div>
 
@@ -246,11 +257,9 @@ export default function AIReportsPage() {
                         <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${isCritical ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}`}>
                           {path.exploitability || 'HIGH'} THREAT VECTOR
                         </span>
-                        {path.score !== undefined && (
-                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-900 text-cyan-300 border border-slate-800">
-                            Risk Score: {path.score.toFixed(0)}/100
-                          </span>
-                        )}
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-900 text-cyan-300 border border-slate-800">
+                          Risk Score: {getPathRisk(path)}/100
+                        </span>
                         {path.blast_radius !== undefined && (
                           <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono bg-slate-900 text-purple-300 border border-slate-800">
                             Blast Radius: {path.blast_radius.toFixed(0)}%
@@ -295,7 +304,7 @@ export default function AIReportsPage() {
 
                 {/* Structured Body Layout */}
                 <div className="p-6 space-y-6">
-                  
+
                   {/* Threat Scenario & Story */}
                   {nar.story && (
                     <div className="rounded-xl border border-blue-500/30 bg-blue-950/10 p-5 space-y-3">

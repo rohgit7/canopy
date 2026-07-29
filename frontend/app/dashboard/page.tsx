@@ -153,7 +153,14 @@ export default function Dashboard() {
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
   }
 
-  const score = results?.score ?? null
+  const getPathRisk = (p: any) => p.risk_score ?? Math.round(Math.max(10, Math.min(99, 100 - ((p.score || 0.5) * 15))))
+
+  const envRiskScore = results ? (
+    results.attack_paths && results.attack_paths.length > 0
+      ? Math.max(...results.attack_paths.map(getPathRisk))
+      : (results.score !== undefined && results.score !== null ? Math.round(Math.max(0, Math.min(100, 100 - results.score))) : 0)
+  ) : null
+
   const accountLabel = connection?.account_id ? `AWS-${connection.account_id}` : 'AWS-DISCONNECTED'
 
   const statCards = [
@@ -161,7 +168,13 @@ export default function Dashboard() {
     { label: 'Critical Chains', icon: 'ti-link', value: results?.attack_paths?.filter((p: any) => p.exploitability === 'CRITICAL').length ?? '-', sub: results ? 'Active paths' : 'Run a scan', subColor: 'var(--orange)' },
     { label: 'Attack Paths', icon: 'ti-route', value: results?.attack_paths?.length ?? '-', sub: results ? 'Total found' : 'Run a scan', subColor: 'var(--orange)' },
     { label: 'Graph Edges', icon: 'ti-arrows-split-2', value: results?.edge_count ?? '-', sub: results ? 'Relationships' : 'Run a scan', subColor: 'var(--blue)' },
-    { label: 'Risk Score', icon: 'ti-gauge', value: score !== null ? `${score.toFixed(0)}` : '-', sub: score !== null ? (score >= 80 ? 'Low risk' : score >= 50 ? 'Medium risk' : 'High risk') : 'Run a scan', subColor: score !== null ? (score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--orange)' : 'var(--red)') : 'var(--text-dim)' },
+    {
+      label: 'Risk Score',
+      icon: 'ti-gauge',
+      value: envRiskScore !== null ? `${envRiskScore}/100` : '-',
+      sub: envRiskScore !== null ? (envRiskScore >= 80 ? 'Critical risk' : envRiskScore >= 50 ? 'High risk' : envRiskScore >= 20 ? 'Medium risk' : 'Low risk') : 'Run a scan',
+      subColor: envRiskScore !== null ? (envRiskScore >= 80 ? 'var(--red)' : envRiskScore >= 50 ? 'var(--orange)' : envRiskScore >= 20 ? 'var(--blue)' : 'var(--green)') : 'var(--text-dim)'
+    },
     { label: 'Scan Time', icon: 'ti-clock', value: scanning ? 'Live' : formatScanTime(results?.completed_at || results?.started_at), sub: scanning ? 'In progress' : 'Last scan', subColor: 'var(--text-dim)' },
   ]
 
@@ -294,7 +307,7 @@ export default function Dashboard() {
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
-                  <tr>{['Scan ID', 'Target Environment', 'Compliance Status', 'Date', 'Resources', 'Score'].map(h => (
+                  <tr>{['Scan ID', 'Target Environment', 'Compliance Status', 'Date', 'Resources', 'Risk Score'].map(h => (
                     <th key={h}>{h}</th>
                   ))}</tr>
                 </thead>
@@ -306,6 +319,7 @@ export default function Dashboard() {
                         const isRunning = s.status === 'running'
                         const isCompliant = isComplete && (s.score === undefined || s.score >= 80)
                         const isSelected = results?.scan_id === s.scan_id
+                        const rScore = s.score !== undefined ? Math.round(Math.max(0, Math.min(100, 100 - s.score))) : null
                         
                         return (
                           <tr
@@ -354,13 +368,13 @@ export default function Dashboard() {
                               {s.resource_count ?? '-'} resources ({s.node_count ?? 0} nodes)
                             </td>
                             <td style={{ padding: 10 }}>
-                              {s.score !== undefined ? (
+                              {rScore !== null ? (
                                 <span style={{
                                   fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
-                                  background: s.score >= 80 ? 'rgba(122, 161, 22, .14)' : s.score >= 50 ? 'rgba(255, 153, 0, .14)' : 'rgba(209, 50, 18, .14)',
-                                  color: s.score >= 80 ? 'var(--green)' : s.score >= 50 ? 'var(--orange)' : 'var(--red)',
+                                  background: rScore >= 80 ? 'rgba(209, 50, 18, .14)' : rScore >= 50 ? 'rgba(255, 153, 0, .14)' : 'rgba(122, 161, 22, .14)',
+                                  color: rScore >= 80 ? 'var(--red)' : rScore >= 50 ? 'var(--orange)' : 'var(--green)',
                                 }}>
-                                  {s.score.toFixed(0)}/100
+                                  {rScore}/100 Risk
                                 </span>
                               ) : '-'}
                             </td>

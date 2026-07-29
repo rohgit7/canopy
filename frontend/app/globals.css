@@ -3,32 +3,33 @@
 @tailwind utilities;
 
 :root {
-  /* Core palette (dark theme) */
-  --bg: #0b1220; /* page background */
-  --bg-soft: #0f1724; /* slightly lighter */
-  --surface: #111827; /* panels */
-  --surface-strong: #0b1220;
+  /* Official AWS Console Dark Mode Palette */
+  --bg: #0f1b2a; /* AWS Console main dark background */
+  --bg-soft: #161e2e; /* AWS Console soft panel container */
+  --surface: #1a2436; /* AWS Console panel surface */
+  --surface-strong: #0f1b2a;
 
-  /* Primary / accents */
-  --primary: #2563eb; /* blue-600 */
-  --primary-700: #1d4ed8; /* blue-700 */
-  --primary-rgb: 37,99,235;
-  --accent: #ff9900; /* retained orange for CTAs */
-  --accent-rgb: 255,153,0;
+  /* Primary AWS Accents */
+  --primary: #4498d9; /* AWS Interactive Link Blue */
+  --primary-700: #1565c0;
+  --primary-rgb: 68, 152, 217;
+  --accent: #ff9900; /* Official AWS Smile Orange */
+  --accent-rgb: 255, 153, 0;
 
-  /* Semantic colors */
+  /* AWS Semantic Status Colors */
   --success: #10b981;
-  --danger: #ef4444;
+  --danger: #d13212; /* AWS Red */
+  --warning: #ec7211; /* AWS High Risk Orange */
 
-  /* Text & borders */
-  --text: #e6eef8;
-  --text-muted: #9aa7b4;
-  --text-dim: #7f8b97;
-  --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
+  /* Text & Borders */
+  --text: #f2f3f3;
+  --text-muted: #9ba7b6;
+  --text-dim: #788796;
+  --border: #232f3e; /* AWS Squid Ink Border */
+  --border-strong: #2e3d52;
 
   /* Utility */
-  --shadow: 0 2px 10px rgba(0,0,0,0.22);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -43,10 +44,7 @@ body {
 body {
   margin: 0;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.10), transparent 30rem),
-    radial-gradient(circle at 72% 4%, rgba(var(--primary-rgb), 0.12), transparent 28rem),
-    linear-gradient(135deg, var(--bg) 0%, var(--bg-soft) 48%, var(--surface) 100%);
+  background: #0f1b2a;
   font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
 }

@@ -241,7 +241,11 @@ export default function IAMAnalyzerPage() {
 
                     {/* Metadata Summary */}
                     <div className="mt-3 flex items-center gap-4 text-xs text-slate-400 pt-2 border-t border-slate-800/60">
-                      <span>Attached Policies: <strong className="text-slate-200">{item.metadata?.attached_policies?.length || (isAdmin ? 1 : 0)}</strong></span>
+                      <span>Attached Policies: <strong className="text-slate-200">
+                        {((item.metadata?.attached_policy_names?.length || item.metadata?.attached_policies?.length || 0) +
+                          (item.metadata?.inline_policy_docs ? Object.keys(item.metadata.inline_policy_docs).length : 0)) ||
+                          (isAdmin ? 1 : 0)}
+                      </strong></span>
                       <span>Trust Principals: <strong className="text-slate-200">{trustPrincipals.length || 1}</strong></span>
                       {isUser && (
                         <span>MFA: <strong className={item.metadata?.has_mfa ? "text-emerald-400" : "text-red-400"}>{item.metadata?.has_mfa ? "ENABLED" : "DISABLED"}</strong></span>
@@ -332,21 +336,60 @@ export default function IAMAnalyzerPage() {
                 <div>
                   <div className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Attached Policies</div>
                   <div className="space-y-1.5">
-                    {selectedIdentity.metadata?.attached_policies && selectedIdentity.metadata.attached_policies.length > 0 ? (
-                      selectedIdentity.metadata.attached_policies.map((p: any, idx: number) => (
-                        <div key={idx} className="p-2 rounded bg-slate-950 border border-slate-800 text-xs flex items-center justify-between">
-                          <span className="font-mono text-purple-300">{typeof p === 'string' ? p : p.PolicyName || 'Policy'}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-800">ATTACHED</span>
-                        </div>
-                      ))
-                    ) : isRoleAdmin(selectedIdentity) ? (
-                      <div className="p-2 rounded bg-slate-950 border border-slate-800 text-xs flex items-center justify-between">
-                        <span className="font-mono text-red-400 font-bold">AdministratorAccess</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-800">FULL ADMIN</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-400 italic">No explicit policy attachments listed</div>
-                    )}
+                    {(() => {
+                      const attachedArns: string[] = selectedIdentity.metadata?.attached_policies || []
+                      const attachedNames: string[] = selectedIdentity.metadata?.attached_policy_names || []
+                      const inlineDocs = selectedIdentity.metadata?.inline_policy_docs || {}
+                      const inlineNames = Object.keys(inlineDocs)
+
+                      const hasAttached = attachedArns.length > 0 || attachedNames.length > 0 || inlineNames.length > 0
+
+                      if (hasAttached) {
+                        const itemsToRender: { name: string; arn?: string; type: 'MANAGED' | 'INLINE' }[] = []
+
+                        if (attachedArns.length > 0) {
+                          attachedArns.forEach((arn, idx) => {
+                            const name = attachedNames[idx] || (arn.includes(':policy/') ? arn.split(':policy/').pop()! : arn.split('/').pop()!)
+                            itemsToRender.push({ name, arn, type: 'MANAGED' })
+                          })
+                        } else if (attachedNames.length > 0) {
+                          attachedNames.forEach((name) => {
+                            itemsToRender.push({ name, type: 'MANAGED' })
+                          })
+                        }
+
+                        inlineNames.forEach((name) => {
+                          itemsToRender.push({ name, type: 'INLINE' })
+                        })
+
+                        return itemsToRender.map((pol, idx) => (
+                          <div key={idx} className="p-2.5 rounded bg-slate-950 border border-slate-800 text-xs flex items-center justify-between">
+                            <div className="min-w-0 pr-2">
+                              <div className={`font-mono font-bold ${pol.type === 'INLINE' ? 'text-amber-300' : 'text-purple-300'} truncate`}>
+                                {pol.name}
+                              </div>
+                              {pol.arn && pol.arn !== pol.name && (
+                                <div className="text-[10px] text-slate-400 font-mono truncate max-w-[260px]">{pol.arn}</div>
+                              )}
+                            </div>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 ${pol.type === 'INLINE' ? 'bg-amber-950 text-amber-400 border border-amber-800' : 'bg-purple-950 text-purple-400 border border-purple-800'}`}>
+                              {pol.type}
+                            </span>
+                          </div>
+                        ))
+                      } else if (isRoleAdmin(selectedIdentity)) {
+                        return (
+                          <div className="p-2.5 rounded bg-slate-950 border border-slate-800 text-xs flex items-center justify-between">
+                            <span className="font-mono text-red-400 font-bold">AdministratorAccess</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 font-bold">FULL ADMIN</span>
+                          </div>
+                        )
+                      } else {
+                        return (
+                          <div className="text-xs text-slate-400 italic">No explicit policy attachments listed</div>
+                        )
+                      }
+                    })()}
                   </div>
                 </div>
 

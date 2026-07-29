@@ -110,6 +110,15 @@ export default function ResourcesPage() {
       })
   }, [validNodes, filterType, internetFacingOnly, sensitiveOnly, search, sortField, sortAsc])
 
+  // Map nodes by ID for fast lookup
+  const nodeById = useMemo(() => {
+    const map: Record<string, any> = {
+      INTERNET: { id: 'INTERNET', name: 'Internet (Public)', type: 'pseudo:internet' }
+    }
+    nodes.forEach((n: any) => { map[n.id] = n })
+    return map
+  }, [nodes])
+
   // Connected edges to selected resource
   const connectedEdges = useMemo(() => {
     if (!selectedResource || !results?.graph_data?.links) return []
@@ -444,12 +453,19 @@ export default function ResourcesPage() {
                       {connectedEdges.map((e: any, idx: number) => {
                         const isSource = e.source === selectedResource.id
                         const partnerId = isSource ? e.target : e.source
+                        const partnerNode = nodeById[partnerId]
+                        const partnerName = partnerNode?.name || partnerId
 
                         return (
-                          <div key={idx} className="p-2 rounded bg-slate-950 border border-slate-800 text-[11px] flex items-center justify-between">
-                            <span className="text-slate-400">{isSource ? 'Outbound ➔' : '➔ Inbound'}</span>
-                            <span className="font-mono text-cyan-300 truncate max-w-[150px]">{partnerId}</span>
-                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-amber-400 border border-slate-800">
+                          <div key={idx} className="p-2.5 rounded bg-slate-950 border border-slate-800 text-[11px] flex items-center justify-between gap-2">
+                            <span className="text-slate-400 text-[10px] shrink-0 font-medium">{isSource ? 'Outbound ➔' : '➔ Inbound'}</span>
+                            <div className="min-w-0 flex-1 px-1">
+                              <div className="font-bold text-cyan-300 truncate">{partnerName}</div>
+                              {partnerName !== partnerId && (
+                                <div className="text-[9px] font-mono text-slate-500 truncate">{partnerId}</div>
+                              )}
+                            </div>
+                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-amber-400 border border-slate-800 shrink-0">
                               {e.edge_type}
                             </span>
                           </div>
