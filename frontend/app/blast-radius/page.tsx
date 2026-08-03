@@ -27,11 +27,15 @@ import {
 const DAMAGE_WEIGHTS: Record<string, number> = {
   'iam:role':          10.0,
   'rds:instance':       8.0,
+  'rds:cluster':        7.5,
   'iam:user':           7.0,
   's3:bucket':          6.0,
   'lambda:function':    5.0,
   'ec2:instance':       4.0,
   'ec2:security_group': 2.0,
+  'apigateway:rest':    3.5,
+  'apigateway:http':    3.0,
+  'apigateway:websocket': 3.0,
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -42,6 +46,10 @@ const TYPE_LABELS: Record<string, string> = {
   'ec2:instance':      'EC2 Instances',
   'ec2:security_group': 'Security Groups',
   'rds:instance':      'RDS Databases',
+  'rds:cluster':       'RDS Clusters',
+  'apigateway:rest':   'API Gateway REST',
+  'apigateway:http':   'API Gateway HTTP',
+  'apigateway:websocket': 'API Gateway WebSocket',
 }
 
 function renderTypeIcon(type: string) {
@@ -52,6 +60,11 @@ function renderTypeIcon(type: string) {
     case 'lambda:function':   return <Zap className="h-4 w-4 text-orange-400 shrink-0" />
     case 'ec2:instance':      return <Server className="h-4 w-4 text-blue-400 shrink-0" />
     case 'ec2:security_group': return <Shield className="h-4 w-4 text-slate-400 shrink-0" />
+    case 'apigateway:rest':
+    case 'apigateway:http':
+    case 'apigateway:websocket': return <Globe className="h-4 w-4 text-teal-400 shrink-0" />
+    case 'rds:instance':
+    case 'rds:cluster': return <Database className="h-4 w-4 text-violet-400 shrink-0" />
     default:                  return <Layers className="h-4 w-4 text-cyan-400 shrink-0" />
   }
 }

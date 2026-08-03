@@ -9,6 +9,11 @@ const NODE_TYPES: Record<string, { color: string; border: string; label: string 
   'iam:role': { color: '#4c1d95', border: '#8b5cf6', label: 'IAM Role' },
   'iam:user': { color: '#3b0764', border: '#a78bfa', label: 'IAM User' },
   'lambda:function': { color: '#7c2d12', border: '#f97316', label: 'Lambda Function' },
+  'apigateway:rest': { color: '#0f766e', border: '#2dd4bf', label: 'API Gateway REST' },
+  'apigateway:http': { color: '#0f766e', border: '#5eead4', label: 'API Gateway HTTP' },
+  'apigateway:websocket': { color: '#115e59', border: '#99f6e4', label: 'API Gateway WebSocket' },
+  'rds:instance': { color: '#7c3aed', border: '#a78bfa', label: 'RDS Instance' },
+  'rds:cluster': { color: '#6d28d9', border: '#c4b5fd', label: 'RDS Cluster' },
   'pseudo:internet': { color: '#7f1d1d', border: '#ef4444', label: 'Internet' },
 }
 

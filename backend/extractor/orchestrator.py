@@ -7,10 +7,19 @@ from .iam import IAMExtractor
 from .ec2 import EC2Extractor
 from .s3 import S3Extractor
 from .lambda_ import LambdaExtractor
+from .apigateway import APIGatewayExtractor
+from .rds import RDSExtractor
 
 log = logging.getLogger(__name__)
 
-EXTRACTORS = [IAMExtractor, EC2Extractor, S3Extractor, LambdaExtractor]
+EXTRACTORS = [
+    IAMExtractor,
+    EC2Extractor,
+    S3Extractor,
+    LambdaExtractor,
+    APIGatewayExtractor,
+    RDSExtractor,
+]
 
 
 def extract_all(role_arn: str = None) -> list:

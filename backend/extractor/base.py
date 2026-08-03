@@ -13,6 +13,11 @@ class ResourceType(Enum):
     IAM_ROLE = "iam:role"
     IAM_USER = "iam:user"
     LAMBDA_FUNCTION = "lambda:function"
+    APIGATEWAY_REST = "apigateway:rest"
+    APIGATEWAY_HTTP = "apigateway:http"
+    APIGATEWAY_WS = "apigateway:websocket"
+    RDS_INSTANCE = "rds:instance"
+    RDS_CLUSTER = "rds:cluster"
     INTERNET = "pseudo:internet"
 
 @dataclass

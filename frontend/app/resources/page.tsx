@@ -32,6 +32,11 @@ const TYPE_LABELS: Record<string, string> = {
   'iam:role':           'IAM Role',
   'iam:user':           'IAM User',
   'lambda:function':    'Lambda Function',
+  'apigateway:rest':    'API Gateway REST',
+  'apigateway:http':    'API Gateway HTTP',
+  'apigateway:websocket': 'API Gateway WebSocket',
+  'rds:instance':       'RDS Instance',
+  'rds:cluster':        'RDS Cluster',
   'pseudo:internet':    'Internet',
 }
 
@@ -42,6 +47,11 @@ const TYPE_COLORS: Record<string, string> = {
   'iam:role':           '#8c4fff',
   'iam:user':           '#b088ff',
   'lambda:function':    '#ec7211',
+  'apigateway:rest':    '#14b8a6',
+  'apigateway:http':    '#2dd4bf',
+  'apigateway:websocket': '#0f766e',
+  'rds:instance':       '#8b5cf6',
+  'rds:cluster':        '#a78bfa',
   'pseudo:internet':    '#ef4444',
 }
 
@@ -135,6 +145,11 @@ export default function ResourcesPage() {
       case 'iam:role':           return <Key className="h-4 w-4 text-purple-400" />
       case 'iam:user':           return <User className="h-4 w-4 text-purple-300" />
       case 'lambda:function':    return <Zap className="h-4 w-4 text-orange-400" />
+      case 'apigateway:rest':
+      case 'apigateway:http':
+      case 'apigateway:websocket': return <Globe className="h-4 w-4 text-teal-400" />
+      case 'rds:instance':
+      case 'rds:cluster': return <Database className="h-4 w-4 text-violet-400" />
       default:                   return <Layers className="h-4 w-4 text-slate-400" />
     }
   }

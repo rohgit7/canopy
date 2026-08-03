@@ -13,6 +13,11 @@ const NODE_TYPES: Record<string, { color: string; border: string; icon: string; 
   'iam:role': { color: '#4c1d95', border: '#8b5cf6', icon: '⬡', label: 'IAM Role', desc: 'AWS identity with permission policies' },
   'iam:user': { color: '#3b0764', border: '#a78bfa', icon: '⬡', label: 'IAM User', desc: 'Human or service account identity' },
   'lambda:function': { color: '#7c2d12', border: '#f97316', icon: '⬡', label: 'Lambda Function', desc: 'Serverless code execution environment' },
+  'apigateway:rest': { color: '#0f766e', border: '#2dd4bf', icon: '⬡', label: 'API Gateway REST', desc: 'REST API endpoint exposed through API Gateway' },
+  'apigateway:http': { color: '#0f766e', border: '#5eead4', icon: '⬡', label: 'API Gateway HTTP', desc: 'HTTP API endpoint exposed through API Gateway' },
+  'apigateway:websocket': { color: '#115e59', border: '#99f6e4', icon: '⬡', label: 'API Gateway WebSocket', desc: 'WebSocket API endpoint exposed through API Gateway' },
+  'rds:instance': { color: '#7c3aed', border: '#a78bfa', icon: '⬡', label: 'RDS Instance', desc: 'Managed relational database instance' },
+  'rds:cluster': { color: '#6d28d9', border: '#c4b5fd', icon: '⬡', label: 'RDS Cluster', desc: 'Managed Aurora or clustered relational database' },
   'pseudo:internet': { color: '#7f1d1d', border: '#ef4444', icon: '⬡', label: 'Internet', desc: 'Attacker entry point — public internet' },
 }
 
