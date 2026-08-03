@@ -41,17 +41,17 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  'ec2:instance':       '#ff9900',
-  'ec2:security_group': '#146eb4',
-  's3:bucket':          '#7aa116',
-  'iam:role':           '#8c4fff',
-  'iam:user':           '#b088ff',
-  'lambda:function':    '#ec7211',
-  'apigateway:rest':    '#14b8a6',
-  'apigateway:http':    '#2dd4bf',
-  'apigateway:websocket': '#0f766e',
-  'rds:instance':       '#8b5cf6',
-  'rds:cluster':        '#a78bfa',
+  'ec2:instance':       '#1d4ed8',
+  'ec2:security_group': '#475569',
+  's3:bucket':          '#f59e0b',
+  'iam:role':           '#7c3aed',
+  'iam:user':           '#c084fc',
+  'lambda:function':    '#ea580c',
+  'apigateway:rest':    '#0ea5e9',
+  'apigateway:http':    '#14b8a6',
+  'apigateway:websocket': '#16a34a',
+  'rds:instance':       '#db2777',
+  'rds:cluster':        '#9333ea',
   'pseudo:internet':    '#ef4444',
 }
 

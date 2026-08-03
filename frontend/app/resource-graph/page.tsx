@@ -8,17 +8,17 @@ import { requestJson } from '@/lib/api'
 // ── Colour + metadata maps ────────────────────────────────────────────────────
 const NODE_TYPES: Record<string, { color: string; border: string; icon: string; label: string; desc: string }> = {
   'ec2:instance': { color: '#1d4ed8', border: '#3b82f6', icon: '⬡', label: 'EC2 Instance', desc: 'Virtual server running in AWS' },
-  'ec2:security_group': { color: '#374151', border: '#6b7280', icon: '⬡', label: 'Security Group', desc: 'Firewall rules controlling network access' },
-  's3:bucket': { color: '#92400e', border: '#f59e0b', icon: '⬡', label: 'S3 Bucket', desc: 'Object storage — files and data' },
-  'iam:role': { color: '#4c1d95', border: '#8b5cf6', icon: '⬡', label: 'IAM Role', desc: 'AWS identity with permission policies' },
-  'iam:user': { color: '#3b0764', border: '#a78bfa', icon: '⬡', label: 'IAM User', desc: 'Human or service account identity' },
-  'lambda:function': { color: '#7c2d12', border: '#f97316', icon: '⬡', label: 'Lambda Function', desc: 'Serverless code execution environment' },
-  'apigateway:rest': { color: '#0f766e', border: '#2dd4bf', icon: '⬡', label: 'API Gateway REST', desc: 'REST API endpoint exposed through API Gateway' },
-  'apigateway:http': { color: '#0f766e', border: '#5eead4', icon: '⬡', label: 'API Gateway HTTP', desc: 'HTTP API endpoint exposed through API Gateway' },
-  'apigateway:websocket': { color: '#115e59', border: '#99f6e4', icon: '⬡', label: 'API Gateway WebSocket', desc: 'WebSocket API endpoint exposed through API Gateway' },
-  'rds:instance': { color: '#7c3aed', border: '#a78bfa', icon: '⬡', label: 'RDS Instance', desc: 'Managed relational database instance' },
-  'rds:cluster': { color: '#6d28d9', border: '#c4b5fd', icon: '⬡', label: 'RDS Cluster', desc: 'Managed Aurora or clustered relational database' },
-  'pseudo:internet': { color: '#7f1d1d', border: '#ef4444', icon: '⬡', label: 'Internet', desc: 'Attacker entry point — public internet' },
+  'ec2:security_group': { color: '#475569', border: '#64748b', icon: '⬡', label: 'Security Group', desc: 'Firewall rules controlling network access' },
+  's3:bucket': { color: '#f59e0b', border: '#fbbf24', icon: '⬡', label: 'S3 Bucket', desc: 'Object storage — files and data' },
+  'iam:role': { color: '#7c3aed', border: '#a855f7', icon: '⬡', label: 'IAM Role', desc: 'AWS identity with permission policies' },
+  'iam:user': { color: '#c084fc', border: '#d8b4fe', icon: '⬡', label: 'IAM User', desc: 'Human or service account identity' },
+  'lambda:function': { color: '#ea580c', border: '#fb923c', icon: '⬡', label: 'Lambda Function', desc: 'Serverless code execution environment' },
+  'apigateway:rest': { color: '#0ea5e9', border: '#38bdf8', icon: '⬡', label: 'API Gateway REST', desc: 'REST API endpoint exposed through API Gateway' },
+  'apigateway:http': { color: '#14b8a6', border: '#2dd4bf', icon: '⬡', label: 'API Gateway HTTP', desc: 'HTTP API endpoint exposed through API Gateway' },
+  'apigateway:websocket': { color: '#16a34a', border: '#4ade80', icon: '⬡', label: 'API Gateway WebSocket', desc: 'WebSocket API endpoint exposed through API Gateway' },
+  'rds:instance': { color: '#db2777', border: '#f472b6', icon: '⬡', label: 'RDS Instance', desc: 'Managed relational database instance' },
+  'rds:cluster': { color: '#9333ea', border: '#c084fc', icon: '⬡', label: 'RDS Cluster', desc: 'Managed Aurora or clustered relational database' },
+  'pseudo:internet': { color: '#ef4444', border: '#fb7185', icon: '⬡', label: 'Internet', desc: 'Attacker entry point — public internet' },
 }
 
 const EDGE_TYPES: Record<string, { color: string; label: string; weight: number; desc: string; risk: string }> = {

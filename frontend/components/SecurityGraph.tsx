@@ -4,17 +4,17 @@ import cytoscape from 'cytoscape'
 
 const NODE_TYPES: Record<string, { color: string; border: string; label: string }> = {
   'ec2:instance': { color: '#1d4ed8', border: '#3b82f6', label: 'EC2 Instance' },
-  'ec2:security_group': { color: '#374151', border: '#6b7280', label: 'Security Group' },
-  's3:bucket': { color: '#92400e', border: '#f59e0b', label: 'S3 Bucket' },
-  'iam:role': { color: '#4c1d95', border: '#8b5cf6', label: 'IAM Role' },
-  'iam:user': { color: '#3b0764', border: '#a78bfa', label: 'IAM User' },
-  'lambda:function': { color: '#7c2d12', border: '#f97316', label: 'Lambda Function' },
-  'apigateway:rest': { color: '#0f766e', border: '#2dd4bf', label: 'API Gateway REST' },
-  'apigateway:http': { color: '#0f766e', border: '#5eead4', label: 'API Gateway HTTP' },
-  'apigateway:websocket': { color: '#115e59', border: '#99f6e4', label: 'API Gateway WebSocket' },
-  'rds:instance': { color: '#7c3aed', border: '#a78bfa', label: 'RDS Instance' },
-  'rds:cluster': { color: '#6d28d9', border: '#c4b5fd', label: 'RDS Cluster' },
-  'pseudo:internet': { color: '#7f1d1d', border: '#ef4444', label: 'Internet' },
+  'ec2:security_group': { color: '#475569', border: '#64748b', label: 'Security Group' },
+  's3:bucket': { color: '#f59e0b', border: '#fbbf24', label: 'S3 Bucket' },
+  'iam:role': { color: '#7c3aed', border: '#a855f7', label: 'IAM Role' },
+  'iam:user': { color: '#c084fc', border: '#d8b4fe', label: 'IAM User' },
+  'lambda:function': { color: '#ea580c', border: '#fb923c', label: 'Lambda Function' },
+  'apigateway:rest': { color: '#0ea5e9', border: '#38bdf8', label: 'API Gateway REST' },
+  'apigateway:http': { color: '#14b8a6', border: '#2dd4bf', label: 'API Gateway HTTP' },
+  'apigateway:websocket': { color: '#16a34a', border: '#4ade80', label: 'API Gateway WebSocket' },
+  'rds:instance': { color: '#db2777', border: '#f472b6', label: 'RDS Instance' },
+  'rds:cluster': { color: '#9333ea', border: '#c084fc', label: 'RDS Cluster' },
+  'pseudo:internet': { color: '#ef4444', border: '#fb7185', label: 'Internet' },
 }
 
 const EDGE_TYPES: Record<string, { color: string; label: string }> = {
