@@ -34,11 +34,14 @@ export function AttackPathCard({
         border: isSelected ? `2px solid ${current.accent}` : '1px solid var(--border)',
         borderLeft: `4px solid ${current.accent}`,
         background: isSelected ? 'rgba(15, 23, 42, 0.9)' : current.bg,
-        boxShadow: isSelected ? `0 0 16px ${current.badge}` : 'none'
+        boxShadow: isSelected ? `0 0 16px ${current.badge}` : 'none',
+        overflow: 'hidden',
+        maxWidth: '100%',
+        minWidth: 0,
       }}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="flex items-start justify-between" style={{ minWidth: 0 }}>
+        <div className="flex-1" style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
           <div className="flex items-center gap-2 mb-1">
             <span
               className="rounded-full px-2.5 py-0.5 text-xs font-bold"
@@ -56,7 +59,7 @@ export function AttackPathCard({
             )}
           </div>
 
-          <div className="mt-1 text-xs flex items-center gap-3" style={{ color: 'var(--text-dim)' }}>
+          <div className="mt-1 text-xs flex flex-wrap items-center gap-3" style={{ color: 'var(--text-dim)' }}>
             <span>{path.hop_count} hops</span>
             <span>-</span>
             <span>Risk Score: {Math.round(path.risk_score ?? Math.max(10, Math.min(99, 100 - ((path.score || 0.5) * 15))))}/100</span>
@@ -66,9 +69,9 @@ export function AttackPathCard({
 
           {/* Visual Hop Chain Stepper */}
           {path.hops && path.hops.length > 0 && (
-            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto py-1.5 scrollbar-thin">
+            <div className="mt-3 flex items-center gap-1.5 overflow-x-auto py-1.5 scrollbar-thin" style={{ minWidth: 0 }}>
               {path.hops.map((h: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-1.5 shrink-0">
+                <div key={idx} className="flex items-center gap-1.5 shrink-0 min-w-0">
                   <div
                     className="px-2 py-1 rounded text-[11px] font-mono border flex items-center gap-1"
                     style={{
@@ -85,11 +88,13 @@ export function AttackPathCard({
                   </div>
                   {idx === path.hops.length - 1 && (
                     <div
-                      className="px-2 py-1 rounded text-[11px] font-mono border font-semibold"
+                      className="px-2 py-1 rounded text-[11px] font-mono border font-semibold min-w-0"
                       style={{
                         background: 'rgba(239, 68, 68, 0.2)',
                         borderColor: '#ef4444',
-                        color: '#fca5a5'
+                        color: '#fca5a5',
+                        overflowWrap: 'anywhere',
+                        minWidth: 0,
                       }}
                     >
                       {h.target_name || h.target_id?.substring(0, 14)}

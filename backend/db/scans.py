@@ -92,7 +92,7 @@ def get_latest_complete_scan(user_id: str) -> dict | None:
     return _clean(doc)
 
 
-def get_scan_history(user_id: str, limit: int = 10) -> list:
+def get_scan_history(user_id: str) -> list:
     """
     Return scan history without the heavy fields.
     Projection excludes attack_paths and graph_data so this is fast
@@ -107,6 +107,5 @@ def get_scan_history(user_id: str, limit: int = 10) -> list:
             "graph_data":    0,   # exclude — too large for list view
         },
         sort  = [("started_at", -1)],
-        limit = limit,
     )
     return list(docs)
