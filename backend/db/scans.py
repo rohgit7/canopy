@@ -82,6 +82,12 @@ def get_scan(scan_id: str) -> dict | None:
     return _clean(doc)
 
 
+def delete_scan(scan_id: str) -> bool:
+    db = get_db()
+    result = db.scans.delete_one({"scan_id": scan_id})
+    return result.deleted_count == 1
+
+
 def get_latest_complete_scan(user_id: str) -> dict | None:
     """Return the most recently completed scan for this user."""
     db  = get_db()

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, type MouseEvent } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
@@ -8,7 +8,7 @@ import { ScheduleScanModal } from '@/components/ScheduleScanModal'
 import { UserMenu } from '@/components/UserMenu'
 import { useScan } from '@/context/ScanContext'
 
-import { buildApiUrl, getScanHistory, ScanResult } from '@/lib/api'
+import { buildApiUrl, getScanHistory, deleteScan, ScanResult } from '@/lib/api'
 
 export default function Dashboard() {
   const { getToken } = useAuth()
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [scanHistory, setScanHistory] = useState<ScanResult[]>([])
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
   const [csvNotice, setCsvNotice] = useState(false)
+  const [deletingScanId, setDeletingScanId] = useState<string | null>(null)
 
   const loadHistory = useCallback(async () => {
     try {
@@ -74,6 +75,25 @@ export default function Dashboard() {
   useEffect(() => {
     loadHistory()
   }, [results, scanning, loadHistory])
+
+  const handleDeleteScan = async (scanId: string, event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    if (!confirm('Delete this scan? This action cannot be undone.')) return
+
+    setDeletingScanId(scanId)
+    try {
+      const result = await deleteScan(scanId)
+      if (!result) throw new Error('Delete failed')
+      setScanHistory(prev => prev.filter(s => s.scan_id !== scanId))
+      if (results?.scan_id === scanId) {
+        refreshData()
+      }
+    } catch {
+      setError('Unable to delete scan. Please try again.')
+    } finally {
+      setDeletingScanId(null)
+    }
+  }
 
   const scan = async () => {
     setScanning(true)
@@ -307,9 +327,12 @@ export default function Dashboard() {
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
-                  <tr>{['Scan ID', 'Target Environment', 'Compliance Status', 'Date', 'Resources', 'Risk Score'].map(h => (
-                    <th key={h}>{h}</th>
-                  ))}</tr>
+                  <tr>
+                    {['Scan ID', 'Target Environment', 'Compliance Status', 'Date', 'Resources', 'Risk Score'].map(h => (
+                      <th key={h}>{h}</th>
+                    ))}
+                    <th>Action</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {scanHistory.length > 0
@@ -377,6 +400,28 @@ export default function Dashboard() {
                                   {rScore}/100 Risk
                                 </span>
                               ) : '-'}
+                            </td>
+                            <td style={{ padding: 10, textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={(event) => handleDeleteScan(s.scan_id, event)}
+                                disabled={deletingScanId === s.scan_id}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  fontSize: 11,
+                                  padding: '7px 10px',
+                                  borderRadius: 8,
+                                  background: 'rgba(209, 50, 18, 0.12)',
+                                  color: 'var(--danger)',
+                                  border: '1px solid rgba(209, 50, 18, 0.24)',
+                                  cursor: deletingScanId === s.scan_id ? 'not-allowed' : 'pointer',
+                                }}
+                              >
+                                <i className="ti ti-trash" style={{ fontSize: 11 }} />
+                                {deletingScanId === s.scan_id ? 'Deleting...' : 'Delete'}
+                              </button>
                             </td>
                           </tr>
                         )

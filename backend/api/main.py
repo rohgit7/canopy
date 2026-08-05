@@ -25,6 +25,7 @@ from ..db.scans      import (
     complete_scan,
     fail_scan,
     get_scan,
+    delete_scan,
     get_latest_complete_scan,
     get_scan_history,
 )
@@ -125,6 +126,14 @@ async def get_scan_result(scan_id: str):
 
     # Convert datetime objects to strings for JSON
     return _serialise(doc)
+
+
+@app.delete("/scan/{scan_id}")
+async def delete_scan_result(scan_id: str):
+    deleted = delete_scan(scan_id)
+    if not deleted:
+        raise HTTPException(404, "Scan not found")
+    return {"status": "deleted", "scan_id": scan_id}
 
 
 def _get_latest_scan_id(customer_id: str):
