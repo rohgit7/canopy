@@ -112,7 +112,7 @@ export default function AIReportsPage() {
           <div className="space-y-3 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-300 text-xs font-semibold">
               <Sparkles className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
-              Claude AI Intelligence Engine
+              Canopy AI Intelligence Engine
             </div>
 
             <h2 className="text-2xl font-bold text-slate-100 tracking-tight">

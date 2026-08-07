@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback, type MouseEvent } from 'react'
+import { useEffect, useState, useCallback, useMemo, type MouseEvent } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { SecurityGraph } from '@/components/SecurityGraph'
 import { AttackPathCard } from '@/components/AttackPathCard'
@@ -21,6 +21,22 @@ export default function Dashboard() {
   const [csvNotice, setCsvNotice] = useState(false)
   const [deletingScanId, setDeletingScanId] = useState<string | null>(null)
 
+  const [searchScanId, setSearchScanId] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [riskFilter, setRiskFilter] = useState('ALL')
+  const [dateFilter, setDateFilter] = useState('')
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'risk_high' | 'risk_low' | 'resources'>('newest')
+
+  const resetAllFilters = () => {
+    setSearchScanId('')
+    setStatusFilter('ALL')
+    setRiskFilter('ALL')
+    setDateFilter('')
+    setSortBy('newest')
+  }
+
+  const hasActiveFilters = Boolean(searchScanId || statusFilter !== 'ALL' || riskFilter !== 'ALL' || dateFilter || sortBy !== 'newest')
+
   const loadHistory = useCallback(async () => {
     try {
       const history = await getScanHistory('me')
@@ -32,8 +48,75 @@ export default function Dashboard() {
     }
   }, [])
 
+  const filteredScanHistory = useMemo(() => {
+    const filtered = scanHistory.filter(s => {
+      if (searchScanId.trim()) {
+        const q = searchScanId.trim().toLowerCase()
+        const rawId = s.scan_id.toLowerCase()
+        const formattedId = `scn-${rawId}`
+        if (!rawId.includes(q) && !formattedId.includes(q)) {
+          return false
+        }
+      }
+
+      if (statusFilter !== 'ALL') {
+        const isComplete = s.status === 'complete'
+        const isRunning = s.status === 'running'
+        const isCompliant = isComplete && (s.score === undefined || s.score >= 80)
+        const isNonCompliant = isComplete && (s.score !== undefined && s.score < 80)
+
+        if (statusFilter === 'COMPLIANT' && !isCompliant) return false
+        if (statusFilter === 'NON-COMPLIANT' && !isNonCompliant) return false
+        if (statusFilter === 'running' && !isRunning) return false
+        if (statusFilter === 'complete' && !isComplete) return false
+        if (statusFilter === 'failed' && s.status !== 'failed') return false
+      }
+
+      if (riskFilter !== 'ALL') {
+        const rScore = s.score !== undefined ? Math.round(Math.max(0, Math.min(100, 100 - s.score))) : null
+        if (riskFilter === 'CRITICAL' && (rScore === null || rScore < 80)) return false
+        if (riskFilter === 'HIGH' && (rScore === null || rScore < 50)) return false
+        if (riskFilter === 'LOW' && (rScore === null || rScore >= 50)) return false
+      }
+
+      if (dateFilter) {
+        const isoStr = s.completed_at || s.started_at
+        if (!isoStr) return false
+        const formattedIso = isoStr.endsWith('Z') || isoStr.includes('+') ? isoStr : `${isoStr}Z`
+        const dateObj = new Date(formattedIso)
+        if (isNaN(dateObj.getTime())) return false
+
+        const yyyy = dateObj.getFullYear()
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0')
+        const dd = String(dateObj.getDate()).padStart(2, '0')
+        const dateFormatted = `${yyyy}-${mm}-${dd}`
+
+        const isoDateFormatted = dateObj.toISOString().slice(0, 10)
+        if (dateFormatted !== dateFilter && isoDateFormatted !== dateFilter) {
+          return false
+        }
+      }
+
+      return true
+    })
+
+    return filtered.sort((a, b) => {
+      const timeA = new Date(a.completed_at || a.started_at || 0).getTime()
+      const timeB = new Date(b.completed_at || b.started_at || 0).getTime()
+      const riskA = a.score !== undefined ? Math.round(Math.max(0, Math.min(100, 100 - a.score))) : -1
+      const riskB = b.score !== undefined ? Math.round(Math.max(0, Math.min(100, 100 - b.score))) : -1
+
+      if (sortBy === 'newest') return timeB - timeA
+      if (sortBy === 'oldest') return timeA - timeB
+      if (sortBy === 'risk_high') return riskB - riskA
+      if (sortBy === 'risk_low') return riskA - riskB
+      if (sortBy === 'resources') return (b.resource_count || 0) - (a.resource_count || 0)
+      return 0
+    })
+  }, [scanHistory, searchScanId, statusFilter, riskFilter, dateFilter, sortBy])
+
   const exportCsv = () => {
-    const records = scanHistory.length > 0 ? scanHistory : (results ? [results] : [])
+    const records = filteredScanHistory.length > 0 ? filteredScanHistory : (scanHistory.length > 0 ? scanHistory : (results ? [results] : []))
     if (records.length === 0) {
       alert('No scan data available to export.')
       return
@@ -216,12 +299,6 @@ export default function Dashboard() {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-            <div className="pill search-pill">
-              <i className="ti ti-search" style={{ fontSize: 15 }} />Search threats, assets...
-            </div>
-            <button className="icon-button" aria-label="Notifications">
-              <i className="ti ti-bell" style={{ fontSize: 18 }} />
-            </button>
             <UserMenu />
           </div>
 
@@ -267,6 +344,336 @@ export default function Dashboard() {
                   </div>
               }
             </div>
+          </div>
+
+          {/* Enhanced Search & Filter Scans Panel */}
+          <div
+            className="panel"
+            style={{
+              padding: '16px 20px',
+              marginTop: 16,
+              marginBottom: 16,
+              background: 'linear-gradient(180deg, rgba(26, 36, 52, 0.75), rgba(15, 23, 42, 0.95))',
+              border: '1px solid rgba(255, 153, 0, 0.25)',
+              borderRadius: 12,
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+              backdropFilter: 'blur(10px)'
+            }}
+          >
+            {/* Header & Quick Filter Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="ti ti-adjustments-horizontal" style={{ color: 'var(--orange)', fontSize: 18 }} />
+                  <span className="section-title" style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.02em' }}>
+                    Filter Scans
+                  </span>
+                </div>
+
+                <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: hasActiveFilters ? 'rgba(255, 153, 0, 0.18)' : 'rgba(255, 255, 255, 0.06)', color: hasActiveFilters ? 'var(--orange)' : 'var(--text-muted)', fontWeight: 600, border: hasActiveFilters ? '1px solid rgba(255, 153, 0, 0.35)' : '1px solid transparent' }}>
+                  {filteredScanHistory.length} of {scanHistory.length} Scans
+                </span>
+
+                {/* Quick Presets */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginLeft: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => { setStatusFilter('ALL'); setRiskFilter('ALL'); }}
+                    style={{
+                      fontSize: 10, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s ease',
+                      background: (statusFilter === 'ALL' && riskFilter === 'ALL') ? 'rgba(255, 153, 0, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: (statusFilter === 'ALL' && riskFilter === 'ALL') ? 'var(--orange)' : 'var(--text-muted)',
+                      border: (statusFilter === 'ALL' && riskFilter === 'ALL') ? '1px solid rgba(255, 153, 0, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setStatusFilter('COMPLIANT'); setRiskFilter('ALL'); }}
+                    style={{
+                      fontSize: 10, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s ease',
+                      background: statusFilter === 'COMPLIANT' ? 'rgba(122, 161, 22, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: statusFilter === 'COMPLIANT' ? 'var(--green)' : 'var(--text-muted)',
+                      border: statusFilter === 'COMPLIANT' ? '1px solid rgba(122, 161, 22, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    <i className="ti ti-shield-check" style={{ marginRight: 3 }} />Compliant
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setStatusFilter('NON-COMPLIANT'); setRiskFilter('ALL'); }}
+                    style={{
+                      fontSize: 10, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s ease',
+                      background: statusFilter === 'NON-COMPLIANT' ? 'rgba(209, 50, 18, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: statusFilter === 'NON-COMPLIANT' ? 'var(--red)' : 'var(--text-muted)',
+                      border: statusFilter === 'NON-COMPLIANT' ? '1px solid rgba(209, 50, 18, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    <i className="ti ti-shield-x" style={{ marginRight: 3 }} />Non-Compliant
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setRiskFilter('HIGH'); }}
+                    style={{
+                      fontSize: 10, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s ease',
+                      background: riskFilter === 'HIGH' ? 'rgba(255, 153, 0, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                      color: riskFilter === 'HIGH' ? 'var(--orange)' : 'var(--text-muted)',
+                      border: riskFilter === 'HIGH' ? '1px solid rgba(255, 153, 0, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    <i className="ti ti-flame" style={{ marginRight: 3 }} />High Risk (≥50)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setStatusFilter('running'); }}
+                    style={{
+                      fontSize: 10, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s ease',
+                      background: statusFilter === 'running' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      color: statusFilter === 'running' ? 'var(--cyan)' : 'var(--text-muted)',
+                      border: statusFilter === 'running' ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                  >
+                    <i className="ti ti-loader" style={{ marginRight: 3 }} />Scanning
+                  </button>
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  style={{
+                    fontSize: 11, padding: '5px 12px', borderRadius: 6,
+                    border: '1px solid rgba(209, 50, 18, 0.35)', color: 'var(--red)',
+                    background: 'rgba(209, 50, 18, 0.12)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600,
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <i className="ti ti-refresh" style={{ fontSize: 12 }} /> Reset Filters
+                </button>
+              )}
+            </div>
+
+            {/* Filter Inputs Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+              {/* Filter by Scan ID */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="ti ti-search" style={{ fontSize: 12, color: 'var(--orange)' }} /> Scan ID
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="ti ti-search" style={{ position: 'absolute', left: 10, color: 'var(--text-dim)', fontSize: 14 }} />
+                  <input
+                    type="text"
+                    placeholder="e.g. SCN-a1b2c3 or ID"
+                    value={searchScanId}
+                    onChange={(e) => setSearchScanId(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 28px 7px 30px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: searchScanId ? '1px solid var(--orange)' : '1px solid var(--border)',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: 'var(--text)',
+                      outline: 'none',
+                      boxShadow: searchScanId ? '0 0 10px rgba(255, 153, 0, 0.15)' : 'none'
+                    }}
+                  />
+                  {searchScanId && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchScanId('')}
+                      style={{
+                        position: 'absolute', right: 8, background: 'none', border: 'none',
+                        color: 'var(--text-dim)', cursor: 'pointer', padding: 2, display: 'flex'
+                      }}
+                    >
+                      <i className="ti ti-x" style={{ fontSize: 13 }} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter by Compliance Status */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="ti ti-shield" style={{ fontSize: 12, color: 'var(--cyan)' }} /> Status
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="ti ti-shield-check" style={{ position: 'absolute', left: 10, color: 'var(--text-dim)', fontSize: 14, zIndex: 1 }} />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 10px 7px 30px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: statusFilter !== 'ALL' ? '1px solid var(--orange)' : '1px solid var(--border)',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: 'var(--text)',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      boxShadow: statusFilter !== 'ALL' ? '0 0 10px rgba(255, 153, 0, 0.15)' : 'none'
+                    }}
+                  >
+                    <option value="ALL">All Compliance Statuses</option>
+                    <option value="COMPLIANT">Shield Compliant (Score ≥ 80)</option>
+                    <option value="NON-COMPLIANT">Non-Compliant (Score &lt; 80)</option>
+                    <option value="running">Scanning / In-Progress</option>
+                    <option value="complete">Status Complete</option>
+                    <option value="failed">Status Failed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Filter by Risk Level */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="ti ti-gauge" style={{ fontSize: 12, color: 'var(--red)' }} /> Risk Level
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="ti ti-flame" style={{ position: 'absolute', left: 10, color: 'var(--text-dim)', fontSize: 14, zIndex: 1 }} />
+                  <select
+                    value={riskFilter}
+                    onChange={(e) => setRiskFilter(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 10px 7px 30px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: riskFilter !== 'ALL' ? '1px solid var(--orange)' : '1px solid var(--border)',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: 'var(--text)',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      boxShadow: riskFilter !== 'ALL' ? '0 0 10px rgba(255, 153, 0, 0.15)' : 'none'
+                    }}
+                  >
+                    <option value="ALL">All Risk Levels</option>
+                    <option value="CRITICAL">Critical Risk (≥ 80)</option>
+                    <option value="HIGH">High Risk (≥ 50)</option>
+                    <option value="LOW">Low / Med Risk (&lt; 50)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Filter by Date */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="ti ti-calendar" style={{ fontSize: 12, color: 'var(--green)' }} /> Scan Date
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 28px 7px 10px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: dateFilter ? '1px solid var(--orange)' : '1px solid var(--border)',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: 'var(--text)',
+                      outline: 'none',
+                      colorScheme: 'dark',
+                      boxShadow: dateFilter ? '0 0 10px rgba(255, 153, 0, 0.15)' : 'none'
+                    }}
+                  />
+                  {dateFilter && (
+                    <button
+                      type="button"
+                      onClick={() => setDateFilter('')}
+                      style={{
+                        position: 'absolute', right: 8, background: 'none', border: 'none',
+                        color: 'var(--text-dim)', cursor: 'pointer', padding: 2, display: 'flex'
+                      }}
+                    >
+                      <i className="ti ti-x" style={{ fontSize: 13 }} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Sort Order */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="ti ti-arrows-sort" style={{ fontSize: 12, color: 'var(--blue)' }} /> Sort By
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <i className="ti ti-sort-descending" style={{ position: 'absolute', left: 10, color: 'var(--text-dim)', fontSize: 14, zIndex: 1 }} />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 10px 7px 30px',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      border: sortBy !== 'newest' ? '1px solid var(--orange)' : '1px solid var(--border)',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      color: 'var(--text)',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="newest">Newest Scans First</option>
+                    <option value="oldest">Oldest Scans First</option>
+                    <option value="risk_high">Highest Risk First</option>
+                    <option value="risk_low">Lowest Risk First</option>
+                    <option value="resources">Most AWS Resources</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Filter Tags Bar */}
+            {hasActiveFilters && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255, 255, 255, 0.06)', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Active Filters:
+                </span>
+
+                {searchScanId && (
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(255, 153, 0, 0.15)', color: 'var(--orange)', border: '1px solid rgba(255, 153, 0, 0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    ID: "{searchScanId}"
+                    <i className="ti ti-x" onClick={() => setSearchScanId('')} style={{ cursor: 'pointer', fontSize: 11 }} />
+                  </span>
+                )}
+
+                {statusFilter !== 'ALL' && (
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(56, 189, 248, 0.15)', color: 'var(--cyan)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    Status: {statusFilter}
+                    <i className="ti ti-x" onClick={() => setStatusFilter('ALL')} style={{ cursor: 'pointer', fontSize: 11 }} />
+                  </span>
+                )}
+
+                {riskFilter !== 'ALL' && (
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(209, 50, 18, 0.15)', color: 'var(--red)', border: '1px solid rgba(209, 50, 18, 0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    Risk: {riskFilter}
+                    <i className="ti ti-x" onClick={() => setRiskFilter('ALL')} style={{ cursor: 'pointer', fontSize: 11 }} />
+                  </span>
+                )}
+
+                {dateFilter && (
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(122, 161, 22, 0.15)', color: 'var(--green)', border: '1px solid rgba(122, 161, 22, 0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    Date: {dateFilter}
+                    <i className="ti ti-x" onClick={() => setDateFilter('')} style={{ cursor: 'pointer', fontSize: 11 }} />
+                  </span>
+                )}
+
+                {sortBy !== 'newest' && (
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 6, background: 'rgba(148, 163, 184, 0.15)', color: 'var(--text-muted)', border: '1px solid rgba(148, 163, 184, 0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    Sort: {sortBy}
+                    <i className="ti ti-x" onClick={() => setSortBy('newest')} style={{ cursor: 'pointer', fontSize: 11 }} />
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="panel" style={{ padding: 16 }}>
@@ -335,8 +742,8 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {scanHistory.length > 0
-                    ? scanHistory.map(s => {
+                  {filteredScanHistory.length > 0
+                    ? filteredScanHistory.map(s => {
                         const dateStr = formatScanDate(s.completed_at || s.started_at)
                         const isComplete = s.status === 'complete'
                         const isRunning = s.status === 'running'
@@ -426,8 +833,32 @@ export default function Dashboard() {
                           </tr>
                         )
                       })
+                    : scanHistory.length > 0
+                    ? <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: 32, fontSize: 12 }}>
+                          <i className="ti ti-search-off" style={{ fontSize: 24, display: 'block', margin: '0 auto 8px', color: 'var(--orange)' }} />
+                          No compliance scans match your selected filter criteria.
+                          <button
+                            type="button"
+                            onClick={resetAllFilters}
+                            style={{
+                              marginLeft: 10,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: 'var(--orange)',
+                              background: 'rgba(255, 153, 0, 0.12)',
+                              border: '1px solid rgba(255, 153, 0, 0.3)',
+                              borderRadius: 6,
+                              padding: '4px 10px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <i className="ti ti-refresh" style={{ marginRight: 4 }} />Reset All Filters
+                          </button>
+                        </td>
+                      </tr>
                     : <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: 24, fontSize: 12 }}>
+                        <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: 24, fontSize: 12 }}>
                           No scan history found in database. Click "START SCAN" to run your first scan.
                         </td>
                       </tr>
