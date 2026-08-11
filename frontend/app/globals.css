@@ -3,29 +3,29 @@
 @tailwind utilities;
 
 :root {
-  /* Official AWS Console Dark Mode Palette */
-  --bg: #0f1b2a; /* AWS Console main dark background */
-  --bg-soft: #161e2e; /* AWS Console soft panel container */
-  --surface: #1a2436; /* AWS Console panel surface */
-  --surface-strong: #0f1b2a;
+  /* Unified App Background */
+  --bg: #161D26;
+  --bg-soft: #1a2230;
+  --surface: #1e2736;
+  --surface-strong: #161D26;
 
   /* Primary AWS Accents */
-  --primary: #4498d9; /* AWS Interactive Link Blue */
+  --primary: #4498d9;
   --primary-700: #1565c0;
   --primary-rgb: 68, 152, 217;
-  --accent: #ff9900; /* Official AWS Smile Orange */
+  --accent: #ff9900;
   --accent-rgb: 255, 153, 0;
 
   /* AWS Semantic Status Colors */
   --success: #10b981;
-  --danger: #d13212; /* AWS Red */
-  --warning: #ec7211; /* AWS High Risk Orange */
+  --danger: #d13212;
+  --warning: #ec7211;
 
   /* Text & Borders */
   --text: #f2f3f3;
   --text-muted: #9ba7b6;
   --text-dim: #788796;
-  --border: #232f3e; /* AWS Squid Ink Border */
+  --border: #252e3d;
   --border-strong: #2e3d52;
 
   /* Utility */
@@ -44,7 +44,7 @@ body {
 body {
   margin: 0;
   color: var(--text);
-  background: #0f1b2a;
+  background: #161D26;
   font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   overflow-x: hidden;
 }
@@ -73,7 +73,7 @@ button:not(:disabled):hover {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(4, 13, 24, 0.75);
+  background: #161D26;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -99,9 +99,7 @@ button:not(:disabled):hover {
   display: flex;
   flex-direction: column;
   overflow: auto;
-  background:
-    linear-gradient(180deg, rgba(17,24,39,0.64), rgba(11,17,32,0.9)),
-    radial-gradient(circle at 78% 0%, rgba(var(--primary-rgb), 0.06), transparent 24rem);
+  background: #161D26;
 }
 
 .app-topbar {
@@ -112,8 +110,7 @@ button:not(:disabled):hover {
   gap: 18px;
   padding: 12px 24px;
   border-bottom: 1px solid var(--border);
-  background: rgba(16,22,34,0.82);
-  backdrop-filter: blur(18px);
+  background: #161D26;
   flex-shrink: 0;
   position: relative;
   z-index: 100;
@@ -151,10 +148,7 @@ button:not(:disabled):hover {
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, rgba(17,24,39,0.98), rgba(11,17,32,0.98)),
-    radial-gradient(circle at top, rgba(var(--primary-rgb), 0.08), transparent 18rem);
-  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.18);
+  background: #161D26;
 }
 
 .sidebar-brand {
@@ -289,11 +283,10 @@ button:not(:disabled):hover {
   min-height: 36px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(17,24,39,0.6);
+  background: #1e2736;
   color: var(--text);
   padding: 0 13px;
   font-size: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .search-pill {
@@ -309,14 +302,14 @@ button:not(:disabled):hover {
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text-muted);
-  background: rgba(17,24,39,0.56);
+  background: #1e2736;
   cursor: pointer;
 }
 
 .panel {
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(17,24,39,0.95), rgba(16,22,34,0.95));
+  background: #1e2736;
   box-shadow: var(--shadow);
 }
 
@@ -469,7 +462,7 @@ button:not(:disabled):hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(17, 24, 39, 0.7);
+  background: #1e2736;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 4px 12px 4px 6px;
@@ -527,8 +520,8 @@ button:not(:disabled):hover {
   right: 0;
   top: calc(100% + 8px);
   width: 300px;
-  background: #07121a;
-  border: 1px solid #1a2d45;
+  background: #161D26;
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
   z-index: 9999;
@@ -539,8 +532,8 @@ button:not(:disabled):hover {
 
 
 .user-menu-section {
-  background: #0a1929;
-  border: 1px solid #1a2d45;
+  background: #1e2736;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 12px;
   display: grid;
@@ -601,7 +594,7 @@ button:not(:disabled):hover {
   font-size: 9px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #0f2236;
+  background: #252e3d;
   color: #607d8b;
 }
 
@@ -609,8 +602,8 @@ button:not(:disabled):hover {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #0f2236;
-  border: 1px solid #1a2d45;
+  background: #252e3d;
+  border: 1px solid var(--border);
   border-radius: 4px;
   color: #90caf9;
   padding: 3px 8px;
@@ -641,8 +634,8 @@ button:not(:disabled):hover {
   gap: 6px;
   padding: 8px;
   border-radius: 6px;
-  border: 1px solid #1a2d45;
-  background: #0a1929;
+  border: 1px solid var(--border);
+  background: #1e2736;
   color: #b0bec5;
   font-size: 11px;
   font-weight: 500;
@@ -650,7 +643,7 @@ button:not(:disabled):hover {
 }
 
 .user-menu-button:hover {
-  background: #0f2236;
+  background: #252e3d;
   color: #ffffff;
 }
 

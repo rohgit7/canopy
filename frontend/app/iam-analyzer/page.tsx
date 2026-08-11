@@ -33,9 +33,9 @@ function isRoleAdmin(n: any): boolean {
 
 export default function IAMAnalyzerPage() {
   const { results, loaded } = useScan()
-  const [nodes, setNodes] = useState<any[]>([])
-  const [edges, setEdges] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [nodes, setNodes] = useState<any[]>(() => results?.graph_data?.nodes || [])
+  const [edges, setEdges] = useState<any[]>(() => results?.graph_data?.links || [])
+  const loading = !loaded
   const [selectedIdentity, setSelectedIdentity] = useState<any | null>(null)
   const [filterType, setFilterType] = useState<'ALL' | 'ADMIN' | 'ROLE' | 'USER'>('ALL')
 
@@ -43,11 +43,8 @@ export default function IAMAnalyzerPage() {
     if (results) {
       setNodes(results.graph_data?.nodes || [])
       setEdges(results.graph_data?.links || [])
-      setLoading(false)
-    } else if (loaded) {
-      setLoading(false)
     }
-  }, [results, loaded])
+  }, [results])
 
   // Categorize Nodes
   const roles = useMemo(() => nodes.filter((n: any) => n.type === 'iam:role'), [nodes])
@@ -188,7 +185,7 @@ export default function IAMAnalyzerPage() {
                     className="cursor-pointer rounded-xl border p-4 transition-all duration-200"
                     style={{
                       borderColor: isSelected ? 'var(--aws-identity)' : isAdmin ? 'rgba(239, 68, 68, 0.4)' : '#1e293b',
-                      background: isSelected ? 'rgba(140, 79, 255, 0.12)' : isAdmin ? 'rgba(209, 50, 18, 0.08)' : '#0a1929',
+                      background: isSelected ? 'rgba(140, 79, 255, 0.12)' : isAdmin ? 'rgba(209, 50, 18, 0.08)' : '#1e2736',
                       boxShadow: isSelected ? '0 0 16px rgba(140, 79, 255, 0.2)' : 'none'
                     }}
                   >

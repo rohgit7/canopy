@@ -18,6 +18,7 @@ import {
   Search,
   Activity,
   Shield,
+  Globe,
   ChevronRight,
   Sparkles,
   AlertTriangle,
@@ -71,10 +72,10 @@ function renderTypeIcon(type: string) {
 
 export default function BlastRadiusPage() {
   const { results, loaded } = useScan()
-  const [paths, setPaths] = useState<any[]>([])
-  const [nodes, setNodes] = useState<any[]>([])
-  const [links, setLinks] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [paths, setPaths] = useState<any[]>(() => results?.attack_paths || [])
+  const [nodes, setNodes] = useState<any[]>(() => results?.graph_data?.nodes || [])
+  const [links, setLinks] = useState<any[]>(() => results?.graph_data?.links || [])
+  const loading = !loaded
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'ADMIN'>('ALL')
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
@@ -84,11 +85,8 @@ export default function BlastRadiusPage() {
       setPaths(results.attack_paths || [])
       setNodes(results.graph_data?.nodes || [])
       setLinks(results.graph_data?.links || [])
-      setLoading(false)
-    } else if (loaded) {
-      setLoading(false)
     }
-  }, [results, loaded])
+  }, [results])
 
   // helper to get valid target ID
   const getTargetId = (p: any): string => {

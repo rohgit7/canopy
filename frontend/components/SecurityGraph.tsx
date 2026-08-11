@@ -85,7 +85,7 @@ export function SecurityGraph({
           style: {
             'background-color': (n: any) => {
               const def = NODE_TYPES[n.data('type')]
-              return def?.color || '#1a2d45'
+              return def?.color || '#252e3d'
             },
             'border-color': (n: any) => {
               if (n.data('is_admin')) return '#ff1744'

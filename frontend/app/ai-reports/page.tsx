@@ -36,9 +36,9 @@ function parseNarrative(s: any) {
 
 export default function AIReportsPage() {
   const { results, loaded, refreshData } = useScan()
-  const [paths, setPaths] = useState<any[]>([])
-  const [score, setScore] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [paths, setPaths] = useState<any[]>(() => results?.attack_paths || [])
+  const [score, setScore] = useState<number | null>(() => results?.score ?? null)
+  const loading = !loaded
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'HIGH'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
@@ -47,11 +47,8 @@ export default function AIReportsPage() {
     if (results) {
       setPaths(results.attack_paths || [])
       setScore(results.score ?? null)
-      setLoading(false)
-    } else if (loaded) {
-      setLoading(false)
     }
-  }, [results, loaded])
+  }, [results])
 
   // Calculate path risk score and overall environment risk score
   const getPathRisk = (p: any) => p.risk_score ?? Math.round(Math.max(10, Math.min(99, 100 - ((p.score || 0.5) * 15))))

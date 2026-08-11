@@ -7,19 +7,16 @@ import { useScan }        from '@/context/ScanContext'
 
 export default function AttackPathsPage() {
   const { results, loaded } = useScan()
-  const [paths,  setPaths]  = useState<any[]>([])
-  const [loading,setLoading]= useState(true)
+  const [paths,  setPaths]  = useState<any[]>(() => results?.attack_paths || [])
+  const loading = !loaded
   const [filter, setFilter] = useState<string>('ALL')
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
 
   useEffect(() => {
     if (results) {
       setPaths(results.attack_paths || [])
-      setLoading(false)
-    } else if (loaded) {
-      setLoading(false)
     }
-  }, [results, loaded])
+  }, [results])
 
   const FILTERS = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
   const filtered = filter === 'ALL' ? paths : paths.filter(p => p.exploitability === filter)
@@ -42,13 +39,13 @@ export default function AttackPathsPage() {
         {FILTERS.map(f => (
           <button key={f} onClick={() => { setFilter(f); setSelectedIndex(0) }} style={{
             padding: '6px 14px', fontSize: 11, borderRadius: 6, cursor: 'pointer',
-            border: `1px solid ${filter===f ? (badgeCol[f]||'var(--aws-blue)') : '#1a2d45'}`,
+            border: `1px solid ${filter===f ? (badgeCol[f]||'var(--aws-blue)') : '#252e3d'}`,
             background: filter===f ? (f==='ALL'?'#1565c0':'#0f1a2a') : 'transparent',
             color: filter===f ? (badgeCol[f]||'#fff') : '#607d8b',
             fontWeight: filter===f ? 500 : 400,
           }}>
             {f} {f!=='ALL' && counts[f] !== undefined && (
-              <span style={{ marginLeft: 4, background: '#1a2d45', borderRadius: 4, padding: '1px 6px' }}>
+              <span style={{ marginLeft: 4, background: '#252e3d', borderRadius: 4, padding: '1px 6px' }}>
                 {counts[f]}
               </span>
             )}
@@ -62,7 +59,7 @@ export default function AttackPathsPage() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
         {(['CRITICAL','HIGH','MEDIUM','LOW'] as const).map(sev => (
-          <div key={sev} style={{ background: '#0a1929', border: `1px solid #1a2d45`, borderTop: `3px solid ${badgeCol[sev]}`, borderRadius: 8, padding: 14 }}>
+          <div key={sev} style={{ background: '#1e2736', border: `1px solid #1a2d45`, borderTop: `3px solid ${badgeCol[sev]}`, borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#455a64', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 6 }}>{sev}</div>
             <div style={{ fontSize: 28, fontWeight: 500, color: badgeCol[sev] }}>{counts[sev] ?? 0}</div>
             <div style={{ fontSize: 10, color: '#37637a', marginTop: 4 }}>attack paths</div>
@@ -99,7 +96,7 @@ export default function AttackPathsPage() {
             style={{
               position: 'sticky',
               top: 20,
-              background: '#07121a',
+              background: '#161D26',
               border: '1px solid #1a2d45',
               borderRadius: 12,
               padding: 16,
@@ -136,7 +133,7 @@ export default function AttackPathsPage() {
             </div>
 
             {/* Cytoscape Graph Canvas */}
-            <div style={{ height: 360, width: '100%', borderRadius: 8, background: '#0a1929', border: '1px solid #1e293b', overflow: 'hidden' }}>
+            <div style={{ height: 360, width: '100%', borderRadius: 8, background: '#1e2736', border: '1px solid #1e293b', overflow: 'hidden' }}>
               {results?.graph_data && selectedPath ? (
                 <SecurityGraph data={results.graph_data} attackPaths={[selectedPath]} isolatePath={true} />
               ) : (
@@ -149,7 +146,7 @@ export default function AttackPathsPage() {
 
             {/* Path Summary Stats */}
             {selectedPath && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, background: '#0a1929', padding: 10, borderRadius: 8, border: '1px solid #1e293b' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, background: '#1e2736', padding: 10, borderRadius: 8, border: '1px solid #1e293b' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 9, color: '#64748b', textTransform: 'uppercase' }}>Hops</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>{selectedPath.hop_count}</div>

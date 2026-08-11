@@ -70,7 +70,7 @@ export function ScheduleScanModal({ isOpen, onClose, accountId }: ScheduleScanMo
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
     }}>
       <div style={{
-        width: '100%', maxWidth: 480, background: '#0a1929',
+        width: '100%', maxWidth: 480, background: '#1e2736',
         border: '1px solid #1a2d45', borderRadius: 12, padding: 24,
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)', color: '#e1f5fe'
       }}>
@@ -98,7 +98,7 @@ export function ScheduleScanModal({ isOpen, onClose, accountId }: ScheduleScanMo
         {/* Toggle active */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 14px', background: '#0f2236', borderRadius: 8, marginBottom: 18, border: '1px solid #1a2d45'
+          padding: '12px 14px', background: '#1e2736', borderRadius: 8, marginBottom: 18, border: '1px solid #1a2d45'
         }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 500, color: '#e1f5fe' }}>Enable Recurring Scan</div>
@@ -113,7 +113,7 @@ export function ScheduleScanModal({ isOpen, onClose, accountId }: ScheduleScanMo
             />
             <span style={{
               position: 'absolute', inset: 0, borderRadius: 22,
-              background: enabled ? 'var(--orange)' : '#1a2d45',
+              background: enabled ? 'var(--orange)' : '#252e3d',
               transition: '.3s',
             }}>
               <span style={{
@@ -138,7 +138,7 @@ export function ScheduleScanModal({ isOpen, onClose, accountId }: ScheduleScanMo
                   onClick={() => setFrequency(f)}
                   style={{
                     padding: '8px 4px', fontSize: 11, textTransform: 'capitalize', borderRadius: 6,
-                    border: `1px solid ${frequency === f ? 'var(--orange)' : '#1a2d45'}`,
+                    border: `1px solid ${frequency === f ? 'var(--orange)' : '#252e3d'}`,
                     background: frequency === f ? 'rgba(255, 153, 0, 0.12)' : '#07111f',
                     color: frequency === f ? 'var(--orange)' : '#b0bec5',
                     cursor: 'pointer', fontWeight: frequency === f ? 600 : 400

@@ -48,10 +48,10 @@ function Tooltip({ x, y, data, onClose }: { x: number; y: number; data: any; onC
   return (
     <div style={{
       position: 'absolute', left: x + 12, top: y - 8,
-      background: '#0a1929', border: `1px solid ${borderColor || primaryColor || '#1a2d45'}`,
+      background: '#1e2736', border: `1px solid ${borderColor || primaryColor || '#252e3d'}`,
       borderRadius: 8, padding: 14, minWidth: 220, maxWidth: 300,
       zIndex: 1000, pointerEvents: 'none',
-      boxShadow: `0 0 20px ${borderColor || primaryColor || '#1a2d45'}33`,
+      boxShadow: `0 0 20px ${borderColor || primaryColor || '#252e3d'}33`,
     }}>
       {isNode ? (
         <>
@@ -90,7 +90,7 @@ function Tooltip({ x, y, data, onClose }: { x: number; y: number; data: any; onC
             {(edgeDef as any)?.desc || ''}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#0f2236', color: '#37637a' }}>
+            <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#1e2736', color: '#37637a' }}>
               DIFFICULTY: {data.weight}
             </span>
             <span style={{
@@ -112,9 +112,9 @@ export default function ResourceGraphPage() {
   const cyRef = useRef<HTMLDivElement>(null)
   const cy = useRef<any>(null)
   const { results, loaded } = useScan()
-  const [graphData, setGraphData] = useState<any>(null)
-  const [paths, setPaths] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [graphData, setGraphData] = useState<any>(() => results?.graph_data || null)
+  const [paths, setPaths] = useState<any[]>(() => results?.attack_paths || [])
+  const loading = !loaded
   const [tooltip, setTooltip] = useState<any>(null)
   const [selected, setSelected] = useState<any>(null)
   const [selectedNodeCount, setSelectedNodeCount] = useState<number>(0)
@@ -122,7 +122,16 @@ export default function ResourceGraphPage() {
   const [showEdgeLabels, setShowEdgeLabels] = useState(false)
   const [filterType, setFilterType] = useState<string | null>(null)
   const [highlightPath, setHighlightPath] = useState<number | null>(null)
-  const [stats, setStats] = useState({ nodes: 0, edges: 0, internet: 0, sensitive: 0, admin: 0 })
+  const [stats, setStats] = useState(() => {
+    const nodes = results?.graph_data?.nodes || []
+    return {
+      nodes: nodes.length,
+      edges: results?.graph_data?.links?.length || 0,
+      internet: nodes.filter((n: any) => n.internet_facing).length,
+      sensitive: nodes.filter((n: any) => n.is_sensitive).length,
+      admin: nodes.filter((n: any) => n.is_admin).length,
+    }
+  })
 
   // Fetch data
   useEffect(() => {
@@ -137,11 +146,8 @@ export default function ResourceGraphPage() {
         sensitive: nodes.filter((n: any) => n.is_sensitive).length,
         admin: nodes.filter((n: any) => n.is_admin).length,
       })
-      setLoading(false)
-    } else if (loaded) {
-      setLoading(false)
     }
-  }, [results, loaded])
+  }, [results])
 
   // Build Cytoscape with Group Selection & Dragging
   useEffect(() => {
@@ -193,7 +199,7 @@ export default function ResourceGraphPage() {
           style: {
             'background-color': (n: any) => {
               const def = NODE_TYPES[n.data('type')]
-              return def?.color || '#1a2d45'
+              return def?.color || '#252e3d'
             },
             'border-color': (n: any) => {
               if (n.data('is_admin')) return '#ff1744'
@@ -455,7 +461,7 @@ export default function ResourceGraphPage() {
         <div style={{ width: 240, display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0, overflow: 'auto' }}>
 
           {/* Stats */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Graph Stats</div>
             {[
               { label: 'Total Nodes', value: stats.nodes, color: '#4fc3f7' },
@@ -472,7 +478,7 @@ export default function ResourceGraphPage() {
           </div>
 
           {/* Multi-Node Group Movement Tools */}
-          <div style={{ background: '#0a1929', border: '1px solid #00e5ff', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #00e5ff', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '.7px', fontWeight: 700, marginBottom: 8 }}>
               Group Movement Tools
             </div>
@@ -480,17 +486,17 @@ export default function ResourceGraphPage() {
               Hold <strong style={{ color: '#e1f5fe' }}>Shift</strong> & drag a selection box or Shift-click multiple nodes to move them as a group.
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={selectAllNodes} style={{ flex: 1, padding: '6px', background: '#0f2236', border: '1px solid #00e5ff', borderRadius: 6, color: '#00e5ff', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
+              <button onClick={selectAllNodes} style={{ flex: 1, padding: '6px', background: '#1e2736', border: '1px solid #00e5ff', borderRadius: 6, color: '#00e5ff', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
                 Select All
               </button>
-              <button onClick={clearNodeSelection} style={{ flex: 1, padding: '6px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
+              <button onClick={clearNodeSelection} style={{ flex: 1, padding: '6px', background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
                 Clear ({selectedNodeCount})
               </button>
             </div>
           </div>
 
           {/* Layout */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Layout</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
@@ -501,7 +507,7 @@ export default function ResourceGraphPage() {
               ].map(l => (
                 <button key={l.id} onClick={() => setLayout(l.id)} style={{
                   padding: '6px 10px', background: layout === l.id ? '#1565c0' : 'transparent',
-                  border: `1px solid ${layout === l.id ? '#1565c0' : '#1a2d45'}`,
+                  border: `1px solid ${layout === l.id ? '#1565c0' : '#252e3d'}`,
                   borderRadius: 6, color: layout === l.id ? '#fff' : '#607d8b',
                   fontSize: 11, cursor: 'pointer', textAlign: 'left',
                 }}>
@@ -510,32 +516,32 @@ export default function ResourceGraphPage() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-              <button onClick={fitGraph} style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
+              <button onClick={fitGraph} style={{ flex: 1, padding: '5px', background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
                 Fit
               </button>
-              <button onClick={zoomIn} style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
+              <button onClick={zoomIn} style={{ flex: 1, padding: '5px', background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
                 Zoom +
               </button>
-              <button onClick={zoomOut} style={{ flex: 1, padding: '5px', background: '#0f2236', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
+              <button onClick={zoomOut} style={{ flex: 1, padding: '5px', background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 6, color: '#607d8b', fontSize: 10, cursor: 'pointer' }}>
                 Zoom −
               </button>
             </div>
           </div>
 
           {/* Filter by type */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Filter by Type</div>
             <button onClick={() => setFilterType(null)} style={{
               width: '100%', padding: '5px 10px', marginBottom: 4,
               background: !filterType ? '#1565c0' : 'transparent',
-              border: `1px solid ${!filterType ? '#1565c0' : '#1a2d45'}`,
+              border: `1px solid ${!filterType ? '#1565c0' : '#252e3d'}`,
               borderRadius: 6, color: !filterType ? '#fff' : '#607d8b', fontSize: 11, cursor: 'pointer', textAlign: 'left',
             }}>All Resources</button>
             {Object.entries(NODE_TYPES).filter(([k]) => k !== 'pseudo:internet').map(([type, def]) => (
               <button key={type} onClick={() => setFilterType(filterType === type ? null : type)} style={{
                 width: '100%', padding: '5px 10px', marginBottom: 4,
-                background: filterType === type ? '#0f2236' : 'transparent',
-                border: `1px solid ${filterType === type ? def.border : '#1a2d45'}`,
+                background: filterType === type ? '#1e2736' : 'transparent',
+                border: `1px solid ${filterType === type ? def.border : '#252e3d'}`,
                 borderRadius: 6, color: filterType === type ? def.border : '#607d8b',
                 fontSize: 11, cursor: 'pointer', textAlign: 'left',
                 display: 'flex', alignItems: 'center', gap: 8,
@@ -547,7 +553,7 @@ export default function ResourceGraphPage() {
           </div>
 
           {/* Options */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Options</div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#607d8b', cursor: 'pointer' }}>
               <input
@@ -562,7 +568,7 @@ export default function ResourceGraphPage() {
 
           {/* Attack paths */}
           {paths.length > 0 && (
-            <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+            <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
               <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>
                 Highlight Attack Path
               </div>
@@ -579,7 +585,7 @@ export default function ResourceGraphPage() {
                 <button key={i} onClick={() => handlePathHighlight(i)} style={{
                   width: '100%', padding: '7px 10px', marginBottom: 4,
                   background: highlightPath === i ? '#1a0a0a' : 'transparent',
-                  border: `1px solid ${highlightPath === i ? '#ef5350' : '#1a2d45'}`,
+                  border: `1px solid ${highlightPath === i ? '#ef5350' : '#252e3d'}`,
                   borderRadius: 6, cursor: 'pointer', textAlign: 'left',
                 }}>
                   <div style={{ fontSize: 10, color: '#ef5350', marginBottom: 2 }}>
@@ -650,7 +656,7 @@ export default function ResourceGraphPage() {
                 { label: '−', fn: zoomOut },
               ].map(btn => (
                 <button key={btn.label} onClick={btn.fn} style={{
-                  width: 30, height: 30, background: '#0a1929', border: '1px solid #1a2d45',
+                  width: 30, height: 30, background: '#1e2736', border: '1px solid #1a2d45',
                   borderRadius: 6, color: '#607d8b', fontSize: 14, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
@@ -676,7 +682,7 @@ export default function ResourceGraphPage() {
         <div style={{ width: 220, display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0, overflow: 'auto' }}>
 
           {/* Node legend */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Node Types</div>
             {Object.entries(NODE_TYPES).map(([type, def]) => (
               <div key={type} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
@@ -690,7 +696,7 @@ export default function ResourceGraphPage() {
           </div>
 
           {/* Edge legend */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Edge Types</div>
             {Object.entries(EDGE_TYPES).map(([type, def]) => (
               <div key={type} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
@@ -712,7 +718,7 @@ export default function ResourceGraphPage() {
           </div>
 
           {/* Node/edge border meaning */}
-          <div style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
+          <div style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 8, padding: 14 }}>
             <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>Node Borders</div>
             {[
               { color: '#ff1744', label: 'Admin Role', desc: 'Full account control' },
@@ -732,7 +738,7 @@ export default function ResourceGraphPage() {
 
           {/* Selected element details */}
           {selected && (
-            <div style={{ background: '#0a1929', border: `1px solid ${selected.kind === 'node' ? (NODE_TYPES[selected.type]?.border || '#1a2d45') : (EDGE_TYPES[selected.edge_type]?.color || '#1a2d45')}`, borderRadius: 8, padding: 14 }}>
+            <div style={{ background: '#1e2736', border: `1px solid ${selected.kind === 'node' ? (NODE_TYPES[selected.type]?.border || '#252e3d') : (EDGE_TYPES[selected.edge_type]?.color || '#252e3d')}`, borderRadius: 8, padding: 14 }}>
               <div style={{ fontSize: 10, color: '#37637a', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 10 }}>
                 Selected {selected.kind === 'node' ? 'Node' : 'Edge'}
               </div>

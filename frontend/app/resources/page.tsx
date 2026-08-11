@@ -57,8 +57,8 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function ResourcesPage() {
   const { results, loaded } = useScan()
-  const [nodes, setNodes] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [nodes, setNodes] = useState<any[]>(() => results?.graph_data?.nodes || [])
+  const loading = !loaded
   const [filterType, setFilterType] = useState('ALL')
   const [search, setSearch] = useState('')
   const [internetFacingOnly, setInternetFacingOnly] = useState(false)
@@ -70,11 +70,8 @@ export default function ResourcesPage() {
   useEffect(() => {
     if (results) {
       setNodes(results.graph_data?.nodes || [])
-      setLoading(false)
-    } else if (loaded) {
-      setLoading(false)
     }
-  }, [results, loaded])
+  }, [results])
 
   // Filter out internet virtual node
   const validNodes = useMemo(() => {
@@ -217,7 +214,7 @@ export default function ResourcesPage() {
               className="cursor-pointer rounded-xl border p-3.5 transition-all duration-200"
               style={{
                 borderColor: isSelected ? color : '#1e293b',
-                background: isSelected ? 'rgba(15, 23, 42, 0.95)' : '#0a1929',
+                background: isSelected ? 'rgba(15, 23, 42, 0.95)' : '#1e2736',
                 boxShadow: isSelected ? `0 0 16px ${color}33` : 'none'
               }}
             >

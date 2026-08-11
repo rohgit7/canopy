@@ -84,7 +84,7 @@ export default function DocsPage() {
     <PageLayout title="Docs" subtitle="Complete guide to using Canopy">
       <div style={{ maxWidth: 980, display: 'grid', gap: 24 }}>
         {sections.map((section) => (
-          <section key={section.title} style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 14, padding: 22 }}>
+          <section key={section.title} style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 14, padding: 22 }}>
             <h2 style={{ color: '#9fbcd0', fontSize: 18, marginBottom: 12 }}>{section.title}</h2>
             {section.body.map((line, index) => (
               <p key={index} style={{ color: '#cfddee', fontSize: 14, lineHeight: 1.8, marginBottom: 10 }}>
@@ -93,7 +93,7 @@ export default function DocsPage() {
             ))}
           </section>
         ))}
-        <section style={{ background: '#0a1929', border: '1px solid #1a2d45', borderRadius: 14, padding: 22 }}>
+        <section style={{ background: '#1e2736', border: '1px solid #1a2d45', borderRadius: 14, padding: 22 }}>
           <h2 style={{ color: '#9fbcd0', fontSize: 18, marginBottom: 12 }}>Page Quick Reference</h2>
           <ul style={{ color: '#cfddee', fontSize: 14, lineHeight: 1.8, paddingLeft: 18 }}>
             <li><strong>Dashboard:</strong> scan state, risk metrics, and launch new scans.</li>
