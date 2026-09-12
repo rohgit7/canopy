@@ -688,7 +688,7 @@ export default function Dashboard() {
                 {results?.scan_id && scanHistory.length > 0 && results.scan_id !== scanHistory[0]?.scan_id && (
                   <button
                     type="button"
-                    onClick={refreshData}
+                    onClick={() => refreshData()}
                     style={{
                       fontSize: 11, padding: '7px 12px', borderRadius: 8,
                       border: '1px solid rgba(255, 153, 0, 0.4)', color: 'var(--orange)',

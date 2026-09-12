@@ -24,12 +24,7 @@ export function Sidebar({ onScan, scanning }: {
   const router   = useRouter()
   const { signOut } = useClerk()
 
-  useEffect(() => {
-    NAV_ITEMS.forEach(item => {
-      router.prefetch(item.href)
-    })
-    router.prefetch('/docs')
-  }, [router])
+
 
   const handleLogout = async () => {
     await signOut({ redirectUrl: '/' })

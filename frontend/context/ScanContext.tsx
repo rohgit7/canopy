@@ -13,7 +13,7 @@ interface ScanContextType {
   connection: ConnectionInfo | null
   setConnection: (connection: ConnectionInfo | null) => void
   loaded: boolean
-  refreshData: () => Promise<void>
+  refreshData: (force?: boolean | unknown) => Promise<void>
   selectScan: (scanId: string) => Promise<void>
 }
 
@@ -26,7 +26,11 @@ export function ScanProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<ConnectionInfo | null>(null)
   const [loaded, setLoaded] = useState(false)
 
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (force?: boolean | unknown) => {
+    if (force === true) {
+      const { clearApiCache } = await import('@/lib/api')
+      clearApiCache()
+    }
     try {
       const [dashData, connData] = await Promise.all([
         getDashboard('me'),

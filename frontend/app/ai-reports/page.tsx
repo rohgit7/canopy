@@ -130,7 +130,7 @@ export default function AIReportsPage() {
 
           <div className="flex items-center gap-3 shrink-0">
             <button
-              onClick={refreshData}
+              onClick={() => refreshData(true)}
               className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg"
             >
               <RefreshCw className="h-3.5 w-3.5 text-cyan-400" />
