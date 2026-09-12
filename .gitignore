@@ -266,3 +266,4 @@ Desktop.ini
 
 # Deploy
 deploy/
+.env*
