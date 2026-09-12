@@ -2,19 +2,20 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
-import { Shield, CheckCircle, AlertCircle, Copy } from 'lucide-react'
+import { Shield, CheckCircle, AlertCircle, Copy, Lock } from 'lucide-react'
 import { buildApiUrl } from '@/lib/api'
 import { useScan } from '@/context/ScanContext'
 
 const ACCOUNT_ID = process.env.NEXT_PUBLIC_CANOPY_ACCOUNT_ID || 'YOUR_ACCOUNT_ID'
 
 export default function Connect() {
-  const [roleArn, setRoleArn] = useState('')
-  const [status,  setStatus]  = useState<'idle'|'verifying'|'ok'|'error'>('idle')
-  const [msg,     setMsg]     = useState('')
-  const { getToken }          = useAuth()
-  const { refreshData }       = useScan()
-  const router                = useRouter()
+  const [roleArn, setRoleArn]             = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [status,  setStatus]              = useState<'idle'|'verifying'|'ok'|'error'>('idle')
+  const [msg,     setMsg]                 = useState('')
+  const { getToken }                      = useAuth()
+  const { refreshData }                   = useScan()
+  const router                            = useRouter()
 
   const verify = async () => {
     setStatus('verifying')
@@ -105,10 +106,44 @@ export default function Connect() {
           />
         </div>
 
+        {/* Data Security & Storage Agreement Section */}
+        <div className="bg-gray-900/80 rounded-xl p-6 mb-6 border border-blue-900/40 bg-gradient-to-b from-blue-950/20 to-transparent">
+          <div className="flex items-center gap-2 mb-3 text-blue-400 font-semibold text-base">
+            <Lock className="w-5 h-5" />
+            <span>Data Security & Storage Agreement</span>
+          </div>
+          <div className="text-xs text-gray-300 space-y-2.5 mb-4 leading-relaxed bg-gray-950/40 p-4 rounded-lg border border-gray-800/60">
+            <p className="flex items-start gap-2">
+              <span className="text-blue-400 font-bold">•</span>
+              <span><strong>Secure Encrypted Storage:</strong> Your cloud architecture metadata and IAM graph structures are securely encrypted at rest and during transmission.</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-blue-400 font-bold">•</span>
+              <span><strong>Strict Non-Misuse Guarantee:</strong> We process read-only metadata exclusively to build security visualizer graphs and compliance maps. We never access, store, or share application data, payload files, or credentials.</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-blue-400 font-bold">•</span>
+              <span><strong>Permission Scope:</strong> Access is governed strictly by the ReadOnly permissions attached to your IAM role. You can revoke access at any time directly from your AWS Console.</span>
+            </p>
+          </div>
+
+          <label className="flex items-start gap-3 cursor-pointer select-none group">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={e => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer"
+            />
+            <span className="text-xs text-gray-300 group-hover:text-gray-200 transition-colors">
+              I have read and agree to the Data Privacy & Storage Policy and give explicit permission to scan and securely store AWS architecture metadata.
+            </span>
+          </label>
+        </div>
+
         <button
           onClick={verify}
-          disabled={!roleArn || status === 'verifying'}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 py-3 rounded-xl font-semibold transition text-lg"
+          disabled={!roleArn || !agreedToTerms || status === 'verifying'}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-800 disabled:text-gray-500 py-3 rounded-xl font-semibold transition text-lg disabled:cursor-not-allowed"
         >
           {status === 'verifying' ? 'Verifying...' : '✓  Verify & Connect'}
         </button>
@@ -129,4 +164,4 @@ export default function Connect() {
       </div>
     </div>
   )
-}
+}
